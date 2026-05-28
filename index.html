@@ -1308,6 +1308,490 @@
             background: #c0392b;
             transform: scale(1.1);
         }
+
+        /* ============== МОБИЛЬНАЯ ОПТИМИЗАЦИЯ ============== */
+        @media (max-width: 768px) {
+            /* Основной layout */
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+                border-right: none;
+                border-bottom: 1px solid #2a2f38;
+                padding: 12px;
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                left: 0;
+                top: 60px;
+                z-index: 900;
+                background: #1a1f28;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                border-radius: 0 0 12px 12px;
+            }
+
+            .sidebar.mobile-open {
+                display: flex;
+            }
+
+            .chat-container {
+                flex: 1;
+                width: 100%;
+            }
+
+            /* Авторизация */
+            .auth-container {
+                padding: 30px 20px;
+                max-width: 100%;
+                width: 95%;
+            }
+
+            .auth-title {
+                font-size: 24px;
+            }
+
+            .auth-subtitle {
+                font-size: 12px;
+            }
+
+            .auth-input {
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+
+            .auth-btn {
+                padding: 14px !important;
+                font-size: 16px !important;
+            }
+
+            /* Шапка чата */
+            .chat-header {
+                padding: 12px 16px;
+                flex-direction: row;
+                gap: 8px;
+            }
+
+            .chat-header-left {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .chat-name {
+                font-size: 16px;
+            }
+
+            .chat-status {
+                font-size: 12px;
+            }
+
+            .chat-header-buttons {
+                gap: 6px;
+            }
+
+            .chat-header-btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            /* Области сообщений */
+            .messages-area {
+                padding: 12px 8px;
+            }
+
+            .message {
+                margin-bottom: 12px;
+                max-width: 90%;
+            }
+
+            .message.own {
+                margin-left: auto;
+            }
+
+            .message-bubble {
+                padding: 10px 12px;
+                font-size: 14px;
+                border-radius: 12px;
+            }
+
+            .message-time {
+                font-size: 11px;
+            }
+
+            /* Ввод сообщений */
+            .input-area {
+                padding: 12px 8px;
+                gap: 8px;
+            }
+
+            #messageInput {
+                padding: 12px 12px;
+                font-size: 16px;
+                border-radius: 20px;
+                min-height: 44px;
+            }
+
+            .send-btn {
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                font-size: 18px;
+            }
+
+            /* Модальные окна */
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+                border-radius: 16px;
+                max-height: 85vh;
+                overflow-y: auto;
+            }
+
+            .modal-header h3 {
+                font-size: 18px;
+            }
+
+            .modal-close {
+                font-size: 28px;
+            }
+
+            /* Профиль модал */
+            #profileModal .modal-content {
+                width: 95%;
+                padding: 16px;
+            }
+
+            .profile-avatar-container {
+                width: 100px;
+                height: 100px;
+            }
+
+            .profile-avatar-upload {
+                width: 24px;
+                height: 24px;
+            }
+
+            .profile-input {
+                padding: 12px 14px;
+                font-size: 16px;
+            }
+
+            .profile-input:focus {
+                outline: none;
+                border-color: #31a24c;
+            }
+
+            /* Вкладки профиля */
+            .profile-tab-btn {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+
+            .profile-tab-content {
+                display: none;
+            }
+
+            .profile-tab-content.active {
+                display: block;
+            }
+
+            /* Поиск пользователей */
+            .search-input {
+                font-size: 16px;
+                padding: 12px 14px;
+            }
+
+            .user-item {
+                padding: 12px 8px;
+                margin-bottom: 10px;
+            }
+
+            .user-item-avatar {
+                width: 48px;
+                height: 48px;
+                font-size: 18px;
+            }
+
+            .user-item-details h4 {
+                font-size: 14px;
+            }
+
+            .user-item-details p {
+                font-size: 12px;
+            }
+
+            .call-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            /* Уведомления */
+            #notificationContainer {
+                top: 60px !important;
+                right: 10px !important;
+                left: 10px !important;
+                max-width: calc(100% - 20px) !important;
+            }
+
+            .notification {
+                padding: 14px 14px;
+                font-size: 13px;
+            }
+
+            .notification-icon {
+                font-size: 18px;
+            }
+
+            .notification-text h4 {
+                font-size: 13px;
+            }
+
+            .notification-text p {
+                font-size: 12px;
+            }
+
+            /* Видеозвонки */
+            .call-modal-overlay {
+                z-index: 10000;
+            }
+
+            .call-window {
+                width: 90%;
+                padding: 20px 16px;
+                border-radius: 16px;
+            }
+
+            .call-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+
+            .call-window h3 {
+                font-size: 18px;
+            }
+
+            .call-window p {
+                font-size: 12px;
+            }
+
+            .call-timer {
+                font-size: 16px;
+            }
+
+            .call-buttons {
+                gap: 12px;
+            }
+
+            .call-btn {
+                width: 56px;
+                height: 56px;
+                font-size: 20px;
+            }
+
+            /* Переключатель сайдбара */
+            .sidebar-toggle {
+                display: flex;
+                background: none;
+                border: none;
+                color: #31a24c;
+                font-size: 20px;
+                cursor: pointer;
+                padding: 8px;
+                transition: all 0.3s ease;
+            }
+
+            .sidebar-toggle:hover {
+                color: #ffffff;
+                transform: scale(1.1);
+            }
+
+            /* Общие улучшения сенсорного ввода */
+            button {
+                min-height: 44px;
+            }
+
+            input, textarea, select {
+                font-size: 16px;
+            }
+
+            /* Профиль кнопка */
+            .profile-modal-tabs {
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+
+            .profile-tab-btn {
+                flex: 1;
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            /* Цветовой пикер */
+            .color-picker-grid {
+                gap: 12px;
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .color-option {
+                width: 60px;
+                height: 60px;
+            }
+
+            /* Чек-боксы в настройках */
+            .settings-checkbox {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 8px;
+                margin-bottom: 10px;
+            }
+
+            .settings-checkbox input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+            }
+
+            .settings-checkbox label {
+                font-size: 14px;
+                cursor: pointer;
+                flex: 1;
+            }
+        }
+
+        /* ОЧЕНЬ МАЛЕНЬКИЕ ЭКРАНЫ (до 480px) */
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 24px 16px;
+            }
+
+            .auth-title {
+                font-size: 22px;
+            }
+
+            .auth-logo {
+                font-size: 48px;
+                margin-bottom: 16px;
+            }
+
+            .chat-header {
+                padding: 10px 12px;
+            }
+
+            .chat-name {
+                font-size: 14px;
+            }
+
+            .message-bubble {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            .messages-area {
+                padding: 8px 6px;
+            }
+
+            #messageInput {
+                padding: 10px 12px;
+                min-height: 40px;
+                font-size: 16px;
+            }
+
+            .send-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .modal-content {
+                border-radius: 12px;
+                width: 98%;
+            }
+
+            .profile-avatar-container {
+                width: 80px;
+                height: 80px;
+            }
+
+            .call-window {
+                width: 95%;
+                padding: 16px 12px;
+            }
+
+            .call-btn {
+                width: 52px;
+                height: 52px;
+                font-size: 18px;
+            }
+
+            .color-picker-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .color-option {
+                width: 55px;
+                height: 55px;
+            }
+
+            .user-item {
+                padding: 10px 6px;
+            }
+
+            .avatar {
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
+                margin-right: 10px;
+            }
+
+            .notification {
+                padding: 12px 10px;
+                font-size: 12px;
+            }
+
+            .sidebar-title {
+                font-size: 18px;
+            }
+
+            .chat-header-buttons {
+                gap: 4px;
+            }
+
+            .chat-header-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+
+        /* ПЛАНШЕТЫ (768px - 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+
+            .chat-header-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .modal-content {
+                width: 85%;
+                max-width: 600px;
+            }
+
+            .color-picker-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .profile-avatar-container {
+                width: 100px;
+                height: 100px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1387,6 +1871,9 @@
         <!-- ПРАВАЯ ПАНЕЛЬ -->
         <div class="chat-container">
             <div class="chat-header">
+                <button class="sidebar-toggle" id="sidebarToggle" title="Меню">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <div class="chat-header-left">
                     <div class="avatar" id="headerAvatar">🔔</div>
                     <div class="chat-header-info">
@@ -2161,6 +2648,32 @@ const firebaseConfig = {<br/>
             }
         }
 
+        // Оптимизация для мобильных
+        function setupMobileOptimization() {
+            const sidebar = document.querySelector('.sidebar');
+            
+            // Закрыть сайдбар при изменении ориентации или размера окна
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            });
+
+            // Предотвратить скролл body когда открыт модальное окно
+            const style = document.createElement('style');
+            style.textContent = `
+                body.modal-open {
+                    overflow: hidden;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Улучшить сенсорный опыт
+            document.addEventListener('touchstart', function(){}, {passive: true});
+        }
+
+        setupMobileOptimization();
+
         // ============== ОБРАБОТЧИКИ СОБЫТИЙ ==============
         function setupEventListeners() {
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
@@ -2174,6 +2687,24 @@ const firebaseConfig = {<br/>
             document.getElementById('messageInput').addEventListener('input', (e) => {
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+            });
+
+            // Мобильный toggle сайдбара
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('mobile-open');
+                });
+            }
+
+            // Закрыть сайдбар при клике на чат
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('mobile-open');
+                    }
+                });
             });
 
             document.getElementById('callBtn').addEventListener('click', () => {
