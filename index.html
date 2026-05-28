@@ -462,6 +462,48 @@
             text-overflow: ellipsis;
         }
 
+        .chat-info p.chat-preview {
+            color: #9ca3af;
+            font-size: 12px;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .chat-info p.chat-preview.unread-preview {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .message-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.45rem;
+            margin-top: 8px;
+        }
+
+        .message-read-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .message-read-status.read {
+            background: rgba(34, 197, 94, 0.18);
+            color: #22c55e;
+        }
+
+        .message-read-status.unread {
+            background: rgba(248, 113, 113, 0.18);
+            color: #f97316;
+        }
+
         .status-indicator {
             width: 10px;
             height: 10px;
@@ -2115,7 +2157,7 @@
     <script type="module">
         // ============== FIREBASE CONFIGURATION ==============
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, serverTimestamp, query, orderByChild, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, onChildChanged, serverTimestamp, query, orderByChild, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
         import { 
             getAuth, 
             createUserWithEmailAndPassword, 
@@ -3375,7 +3417,7 @@ const firebaseConfig = {<br/>
                     </div>
                     <div class="chat-info">
                         <h3>${displayName}</h3>
-                        <p id="chat-status-${chatId}">Загрузка...</p>
+                        <p class="chat-preview">Загрузка...</p>
                     </div>
                 `;
                 
@@ -3428,7 +3470,7 @@ const firebaseConfig = {<br/>
                     </div>
                     <div class="chat-info">
                         <h3>${chatName}</h3>
-                        <p>Нажмите для открытия</p>
+                        <p class="chat-preview">Нажмите для открытия</p>
                     </div>
                 `;
                 
@@ -3511,6 +3553,26 @@ const firebaseConfig = {<br/>
             document.getElementById('messageInput').focus();
         }
 
+        function formatChatPreview(text, isOwnMessage) {
+            const cleaned = text ? text.trim() : '';
+            const preview = cleaned.length > 38 ? cleaned.slice(0, 38) + '…' : cleaned;
+            return isOwnMessage ? `Вы: ${preview}` : preview;
+        }
+
+        function updateChatPreview(chatId, previewText, isUnread) {
+            if (!chatId || !chats.has(chatId)) return;
+            const chatData = chats.get(chatId);
+            const previewEl = chatData.element.querySelector('.chat-preview');
+            if (!previewEl) return;
+            previewEl.textContent = previewText || 'Нет сообщений';
+            if (isUnread) {
+                previewEl.classList.add('unread-preview');
+            } else {
+                previewEl.classList.remove('unread-preview');
+            }
+            chatData.lastMessage = previewText;
+        }
+
         // ============== ЗАГРУЗКА СООБЩЕНИЙ ==============
         function loadMessagesFromChat(chatName) {
             if (!firebaseReady) return;
@@ -3527,7 +3589,7 @@ const firebaseConfig = {<br/>
                     loadedMessages.add(messageId);
 
                     const data = snapshot.val();
-                    displayMessage(data.name, data.text, data.timestamp, data.userId);
+                    displayMessage(data.name, data.text, data.timestamp, data.userId, messageId, data.readBy, dbPath);
                 });
             } catch (error) {
                 console.log('Ошибка при загрузке сообщений:', error.message);
@@ -3555,7 +3617,10 @@ const firebaseConfig = {<br/>
                 name: currentUser,
                 userId: currentUserId,
                 text: text,
-                timestamp: serverTimestamp()
+                timestamp: serverTimestamp(),
+                readBy: {
+                    [currentUserId]: true
+                }
             };
 
             push(messagesRef, messageData).catch(error => {
@@ -3569,7 +3634,7 @@ const firebaseConfig = {<br/>
         }
 
         // ============== ОТОБРАЖЕНИЕ СООБЩЕНИЙ ==============
-        function displayMessage(name, text, timestamp, userId) {
+        function displayMessage(name, text, timestamp, userId, messageId, readBy, dbPath) {
             const messagesArea = document.getElementById('messagesArea');
             
             // Очистить empty state если есть
@@ -3579,15 +3644,30 @@ const firebaseConfig = {<br/>
 
             const messageDiv = document.createElement('div');
             const isOwnMessage = userId === currentUserId;
+            const isRead = isOwnMessage || (readBy && readBy[currentUserId]);
             messageDiv.className = `message ${isOwnMessage ? 'own' : 'other'}`;
 
             const formattedTime = formatTime(timestamp);
+            const previewText = formatChatPreview(text, isOwnMessage);
+
+            // Обновление превью в sidebar
+            updateChatPreview(currentChat, previewText, !isRead);
+
+            if (!isRead && !isOwnMessage && dbPath && messageId) {
+                const messageReadRef = ref(database, `${dbPath}/${messageId}/readBy/${currentUserId}`);
+                set(messageReadRef, true).catch(() => {
+                    // Не критично, просто отметка прочтено может не сохраниться
+                });
+            }
 
             messageDiv.innerHTML = `
                 <div class="message-bubble">
                     ${!isOwnMessage ? `<div class="message-author">${name}</div>` : ''}
                     <div class="message-text">${escapeHtml(text)}</div>
-                    <div class="message-time">${formattedTime}</div>
+                    <div class="message-meta">
+                        <span class="message-time">${formattedTime}</span>
+                        <span class="message-read-status ${isRead ? 'read' : 'unread'}" title="${isRead ? 'Прочитано' : 'Не прочитано'}">${isRead ? '✔' : '•'}</span>
+                    </div>
                 </div>
             `;
 
