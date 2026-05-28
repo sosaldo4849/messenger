@@ -1894,6 +1894,9 @@
                     <button class="header-btn" id="videoBtn" title="Видеозвонок">
                         <i class="fas fa-video"></i>
                     </button>
+                    <button class="header-btn" id="groupSettingsBtn" title="Настройки группы" style="display: none;">
+                        <i class="fas fa-cog"></i>
+                    </button>
                 </div>
             </div>
 
@@ -2021,6 +2024,46 @@
             </div>
             <div id="colorPicker" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
                 <!-- Цвета будут добавлены JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- УПРАВЛЕНИЕ ГРУППОЙ -->
+    <div class="modal" id="groupManagementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Управление группой</h3>
+                <button class="modal-close" id="closeGroupModalBtn">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                    <div id="groupAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; cursor: pointer;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <label style="display: block; color: #8a8f98; margin-bottom: 8px;">Аватарка группы</label>
+                        <input type="file" id="groupAvatarInput" accept="image/*" style="display: none;">
+                        <button type="button" id="uploadGroupAvatarBtn" class="auth-btn" style="padding: 8px 12px; font-size: 12px;">
+                            <i class="fas fa-upload"></i> Загрузить
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; color: #8a8f98; margin-bottom: 8px;">Название группы</label>
+                    <input type="text" id="groupNameInput" placeholder="Введите название группы" class="profile-input" style="width: 100%;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; color: #8a8f98; margin-bottom: 8px;">Выберите цвет аватарки</label>
+                    <div id="groupColorPicker" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                        <!-- Цвета будут добавлены JavaScript -->
+                    </div>
+                </div>
+
+                <button type="button" id="saveGroupSettingsBtn" class="auth-btn" style="width: 100%;">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
             </div>
         </div>
     </div>
@@ -2220,6 +2263,21 @@
             document.getElementById('colorPickerModal').classList.remove('active');
         }
 
+        function openGroupManagementModal(groupName) {
+            window.currentGroupName = groupName;
+            document.getElementById('groupManagementModal').classList.add('active');
+            document.getElementById('groupNameInput').value = groupName;
+            loadGroupMetadata(groupName).then(metadata => {
+                if (metadata.avatar) {
+                    document.getElementById('groupAvatarPreview').style.background = `linear-gradient(135deg, ${metadata.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
+                }
+            });
+        }
+
+        function closeGroupManagementModal() {
+            document.getElementById('groupManagementModal').classList.remove('active');
+        }
+
         function updateProfileAvatarDisplay() {
             const avatarEl = document.getElementById('profileAvatarDisplay');
             if (userProfile.avatarImage) {
@@ -2251,6 +2309,28 @@
                 picker.appendChild(colorDiv);
             });
             document.getElementById('colorPickerModal').classList.add('active');
+        }
+
+        function setupGroupColorPicker() {
+            const picker = document.getElementById('groupColorPicker');
+            if (!picker) return;
+            
+            picker.innerHTML = '';
+            avatarColors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'profile-color-circle';
+                colorDiv.style.background = `linear-gradient(135deg, ${color} 0%, rgba(255,255,255,0.1) 100%)`;
+                colorDiv.style.cursor = 'pointer';
+                colorDiv.addEventListener('click', () => {
+                    window.selectedGroupColor = color;
+                    document.getElementById('groupAvatarPreview').style.background = `linear-gradient(135deg, ${color} 0%, rgba(255,255,255,0.1) 100%)`;
+                    document.querySelectorAll('#groupColorPicker .profile-color-circle').forEach(div => {
+                        div.style.border = 'none';
+                    });
+                    colorDiv.style.border = '3px solid #31a24c';
+                });
+                picker.appendChild(colorDiv);
+            });
         }
 
         async function saveProfile() {
@@ -2319,9 +2399,105 @@
         let currentCallId = null;
         let callDuration = 0;
         let callTimer = null;
+        let incomingCallUnsubscribe = null;
 
-        function startIncomingCall(userId, userName, userAvatar) {
+        // Инициировать звонок и отправить в Firebase
+        async function initiateCall(recipientId, recipientName) {
+            if (!firebaseReady) {
+                showNotification('Ошибка', 'Firebase не готов', 'error');
+                return;
+            }
+
+            const callData = {
+                from: currentUserId,
+                fromName: currentUser,
+                fromAvatar: userProfile.avatar,
+                to: recipientId,
+                toName: recipientName,
+                timestamp: serverTimestamp(),
+                status: 'ringing',
+                accepted: false
+            };
+
+            try {
+                const callsRef = ref(database, `calls/${recipientId}`);
+                await push(callsRef, callData);
+                startOutgoingCall(recipientId, recipientName, userProfile.avatar);
+            } catch (error) {
+                showNotification('Ошибка вызова', error.message, 'error');
+            }
+        }
+
+        // Слушать входящие звонки
+        function setupIncomingCallListener() {
+            if (!firebaseReady || !currentUserId) return;
+
+            const userCallsRef = ref(database, `calls/${currentUserId}`);
+            incomingCallUnsubscribe = onChildAdded(userCallsRef, (snapshot) => {
+                const callId = snapshot.key;
+                const callData = snapshot.val();
+
+                if (callData && callData.status === 'ringing' && !callData.accepted) {
+                    // Очистить старые звонки
+                    if (currentCallId && currentCallId !== callData.from) {
+                        endCall();
+                    }
+
+                    startIncomingCall(callData.from, callData.fromName, callData.fromAvatar, callId, callData);
+                }
+            });
+        }
+
+        // Сохранить/загрузить метаданные группы
+        async function saveGroupMetadata(groupName, avatar, customName = null) {
+            if (!firebaseReady) return;
+
+            try {
+                const groupRef = ref(database, `group_info/${groupName}`);
+                await set(groupRef, {
+                    name: customName || groupName,
+                    avatar: avatar,
+                    lastUpdated: serverTimestamp(),
+                    updatedBy: currentUserId
+                });
+                showNotification('Успех', 'Данные группы обновлены', 'success');
+            } catch (error) {
+                showNotification('Ошибка', error.message, 'error');
+            }
+        }
+
+        // Загрузить метаданные группы
+        async function loadGroupMetadata(groupName) {
+            if (!firebaseReady) return { name: groupName, avatar: null };
+
+            return new Promise((resolve) => {
+                const groupRef = ref(database, `group_info/${groupName}`);
+                onValue(groupRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        resolve(snapshot.val());
+                    } else {
+                        resolve({ name: groupName, avatar: null });
+                    }
+                }, { onlyOnce: true });
+            });
+        }
+
+        // Слушать обновления группы в реальном времени
+        function setupGroupMetadataListener(groupName, callback) {
+            if (!firebaseReady) return;
+
+            const groupRef = ref(database, `group_info/${groupName}`);
+            onValue(groupRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    callback(snapshot.val());
+                }
+            });
+        }
+
+        function startIncomingCall(userId, userName, userAvatar, callId = null, callData = null) {
             currentCallId = userId;
+            window.currentIncomingCallId = callId;
+            window.currentIncomingCallData = callData;
             document.getElementById('callCallerName').textContent = userName;
             document.getElementById('callCallerStatus').textContent = 'Входящий видеозвонок...';
             
@@ -2373,17 +2549,44 @@
             showNotification('Звонок завершен', `Длительность: ${Math.floor(callDuration / 60)}:${String(callDuration % 60).padStart(2, '0')}`, 'info');
         }
 
-        function acceptCall() {
-            showNotification('Успех', 'Звонок принят! (функция в разработке)', 'success');
-            endCall();
+        async function acceptCall() {
+            // Обновить статус звонка в Firebase
+            if (window.currentIncomingCallId) {
+                try {
+                    const callRef = ref(database, `calls/${currentUserId}/${window.currentIncomingCallId}`);
+                    await set(callRef, { ...window.currentIncomingCallData, status: 'accepted', accepted: true });
+                } catch (error) {
+                    console.log('Ошибка при принятии звонка:', error.message);
+                }
+            }
+            showNotification('Успех', 'Звонок принят! (видеозвонок в разработке)', 'success');
+            setTimeout(endCall, 2000);
         }
 
-        function declineCall() {
+        async function declineCall() {
+            // Удалить звонок из Firebase
+            if (window.currentIncomingCallId) {
+                try {
+                    const callRef = ref(database, `calls/${currentUserId}/${window.currentIncomingCallId}`);
+                    await set(callRef, null);
+                } catch (error) {
+                    console.log('Ошибка при отклонении звонка:', error.message);
+                }
+            }
             showNotification('Отклонено', 'Вы отклонили входящий вызов', 'info');
             endCall();
         }
 
-        function cancelCall() {
+        async function cancelCall() {
+            // Удалить исходящий звонок из Firebase
+            if (currentCallId) {
+                try {
+                    const callsRef = ref(database, `calls/${currentCallId}`);
+                    await set(callsRef, null);
+                } catch (error) {
+                    console.log('Ошибка при отмене звонка:', error.message);
+                }
+            }
             showNotification('Отменено', 'Исходящий вызов отменен', 'info');
             endCall();
         }
@@ -2678,6 +2881,7 @@ const firebaseConfig = {<br/>
             loadUserProfile().then(() => {
                 setupEventListeners();
                 setupUserStatus();
+                setupIncomingCallListener(); // Слушать входящие звонки
                 loadDefaultChat();
             });
         }
@@ -2822,6 +3026,59 @@ const firebaseConfig = {<br/>
                 navigator.clipboard.writeText(currentUserId);
                 showNotification('Успех', 'ID скопирован в буфер обмена', 'success');
             });
+
+            // Управление группой
+            document.getElementById('groupSettingsBtn').addEventListener('click', () => {
+                if (currentChatType === 'group') {
+                    openGroupManagementModal(currentChat);
+                }
+            });
+
+            document.getElementById('closeGroupModalBtn').addEventListener('click', closeGroupManagementModal);
+
+            document.getElementById('uploadGroupAvatarBtn').addEventListener('click', () => {
+                document.getElementById('groupAvatarInput').click();
+            });
+
+            document.getElementById('groupAvatarInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('Ошибка', 'Размер файла не должен превышать 5 МБ', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    window.groupAvatarImage = base64;
+                    document.getElementById('groupAvatarPreview').style.background = `url(${base64}) center/cover`;
+                    document.getElementById('groupAvatarPreview').innerHTML = '';
+                    showNotification('Успех', 'Аватарка загружена', 'success');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            document.getElementById('saveGroupSettingsBtn').addEventListener('click', async () => {
+                const newGroupName = document.getElementById('groupNameInput').value.trim();
+                if (!newGroupName) {
+                    showNotification('Ошибка', 'Введите название группы', 'warning');
+                    return;
+                }
+
+                // Сохранить в Firebase
+                const selectedColor = window.selectedGroupColor || '#667eea';
+                await saveGroupMetadata(currentChat, selectedColor, newGroupName);
+                closeGroupManagementModal();
+                
+                // Обновить заголовок чата
+                document.getElementById('chatName').textContent = newGroupName;
+            });
+
+            document.getElementById('groupManagementModal').addEventListener('click', (e) => {
+                if (e.target.id === 'groupManagementModal') closeGroupManagementModal();
+            });
         }
 
         function switchProfileTab(tabName) {
@@ -2870,12 +3127,13 @@ const firebaseConfig = {<br/>
                 return;
             }
 
-            if (!userData.phoneNumber) {
-                showNotification('Ошибка', 'У пользователя не указан номер телефона', 'warning');
+            if (!userData.phoneNumber && userData.status === 'offline') {
+                showNotification('Ошибка', 'Пользователь офлайн или не указан номер', 'warning');
                 return;
             }
 
-            startOutgoingCall(userId, userName, userData.avatar);
+            // Инициировать звонок через Firebase
+            initiateCall(userId, userName);
         }
 
         // ============== УПРАВЛЕНИЕ СТАТУСОМ ПОЛЬЗОВАТЕЛЯ ==============
