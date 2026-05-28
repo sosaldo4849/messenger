@@ -530,6 +530,90 @@
             font-size: 18px;
         }
 
+        /* ОШИБКА КОНФИГА */
+        .config-error {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f1419;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .error-box {
+            background: #1a1f28;
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .error-box h1 {
+            color: #e74c3c;
+            margin-bottom: 16px;
+            font-size: 28px;
+        }
+
+        .error-box p {
+            color: #8a8f98;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .error-code {
+            background: #0f1419;
+            border: 1px solid #3a3f48;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #31a24c;
+            overflow-x: auto;
+        }
+
+        .error-box a {
+            color: #31a24c;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error-box a:hover {
+            text-decoration: underline;
+        }
+
+        .setup-steps {
+            text-align: left;
+            background: #0f1419;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+
+        .setup-steps ol {
+            margin: 0;
+            padding-left: 20px;
+            color: #8a8f98;
+        }
+
+        .setup-steps li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .setup-steps code {
+            background: #2a2f38;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #31a24c;
+        }
+
         /* СКРОЛЛ */
         ::-webkit-scrollbar {
             width: 8px;
@@ -643,9 +727,24 @@
             measurementId: ""
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        // Initialize Firebase с проверкой конфига
+        let app = null;
+        let database = null;
+        let firebaseReady = false;
+
+        try {
+            // Проверить, заполнен ли конфиг
+            if (!firebaseConfig.databaseURL || !firebaseConfig.apiKey || !firebaseConfig.projectId) {
+                throw new Error('Firebase конфиг не заполнен');
+            }
+            
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            firebaseReady = true;
+        } catch (error) {
+            firebaseReady = false;
+            console.error('Firebase ошибка:', error.message);
+        }
 
         // ============== ПЕРЕМЕННЫЕ ПРИЛОЖЕНИЯ ==============
         let currentUser = null;
@@ -657,8 +756,62 @@
         const onlineUsers = new Map();
         let isLocalHost = false;
 
+        // ============== ПРОВЕРКА FIREBASE КОНФИГА ==============
+        function showConfigError() {
+            const errorHTML = `
+                <div class="config-error">
+                    <div class="error-box">
+                        <h1>⚠️ Конфиг Firebase не настроен</h1>
+                        <p>Приложение не может подключиться к Firebase Realtime Database</p>
+                        
+                        <div class="setup-steps">
+                            <strong style="color: #31a24c;">Как настроить:</strong>
+                            <ol>
+                                <li>Откройте <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+                                <li>Выберите ваш проект</li>
+                                <li>Перейдите в <strong>Project Settings</strong> → <strong>Your apps</strong></li>
+                                <li>Найдите конфигурацию и скопируйте эти значения:</li>
+                            </ol>
+                        </div>
+
+                        <div class="error-code">
+const firebaseConfig = {<br/>
+&nbsp;&nbsp;apiKey: "YOUR_API_KEY",<br/>
+&nbsp;&nbsp;authDomain: "your-project.firebaseapp.com",<br/>
+&nbsp;&nbsp;databaseURL: "https://your-project-default-rtdb.firebaseio.com",<br/>
+&nbsp;&nbsp;projectId: "your-project",<br/>
+&nbsp;&nbsp;storageBucket: "your-project.appspot.com",<br/>
+&nbsp;&nbsp;messagingSenderId: "123456789",<br/>
+&nbsp;&nbsp;appId: "1:123456789:web:abc123",<br/>
+&nbsp;&nbsp;measurementId: "G-ABC123"
+};
+                        </div>
+
+                        <p>5. Вставьте значения в <code>Index.html</code> (строка ~640)</p>
+                        <p>6. Убедитесь, что в Firebase включены <strong>Realtime Database Rules:</strong></p>
+                        <div class="error-code">
+{
+&nbsp;&nbsp;"rules": {
+&nbsp;&nbsp;&nbsp;&nbsp;".read": true,
+&nbsp;&nbsp;&nbsp;&nbsp;".write": true
+&nbsp;&nbsp;}
+}
+                        </div>
+                        <p style="margin-top: 20px; font-size: 14px;">После настройки <strong>обновите страницу</strong></p>
+                    </div>
+                </div>
+            `;
+            document.body.innerHTML = errorHTML;
+        }
+
         // ============== ИНИЦИАЛИЗАЦИЯ ==============
         function init() {
+            // Проверить Firebase конфиг
+            if (!firebaseReady) {
+                showConfigError();
+                return;
+            }
+
             // Определить, локальное ли приложение
             isLocalHost = window.location.protocol === 'file:';
 
@@ -728,6 +881,8 @@
 
         // ============== УПРАВЛЕНИЕ СТАТУСОМ ПОЛЬЗОВАТЕЛЯ ==============
         function setupUserStatus() {
+            if (!firebaseReady) return;
+
             // Установить статус онлайн
             const userRef = ref(database, `users/${currentUserId}`);
             const userStatus = {
@@ -937,6 +1092,8 @@
 
         // ============== ЗАГРУЗКА СООБЩЕНИЙ ==============
         function loadMessagesFromChat(chatName) {
+            if (!firebaseReady) return;
+
             const dbPath = currentChatType === 'direct' ? `direct_messages/${chatName}` : `messages/${chatName}`;
             const messagesRef = ref(database, dbPath);
             
@@ -958,6 +1115,11 @@
 
         // ============== ОТПРАВКА СООБЩЕНИЯ ==============
         function sendMessage() {
+            if (!firebaseReady) {
+                alert('Firebase не подключен. Пожалуйста, настройте конфиг и обновите страницу.');
+                return;
+            }
+
             const messageInput = document.getElementById('messageInput');
             const text = messageInput.value.trim();
 
