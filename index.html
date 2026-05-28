@@ -1032,6 +1032,139 @@
                 max-width: 80%;
             }
         }
+
+        /* КАСТОМНЫЕ УВЕДОМЛЕНИЯ */
+        .notification {
+            background: rgba(26, 31, 40, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border-left: 4px solid #31a24c;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease;
+            pointer-events: all;
+            min-width: 300px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+        }
+
+        .notification.removing {
+            animation: slideOutRight 0.3s ease forwards;
+        }
+
+        .notification-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            animation: scaleIn 0.3s ease;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .notification-message {
+            font-size: 13px;
+            color: #8a8f98;
+            line-height: 1.4;
+        }
+
+        .notification.success {
+            border-left-color: #31a24c;
+        }
+
+        .notification.success .notification-icon {
+            color: #31a24c;
+        }
+
+        .notification.error {
+            border-left-color: #e74c3c;
+        }
+
+        .notification.error .notification-icon {
+            color: #e74c3c;
+        }
+
+        .notification.warning {
+            border-left-color: #f39c12;
+        }
+
+        .notification.warning .notification-icon {
+            color: #f39c12;
+        }
+
+        .notification.info {
+            border-left-color: #667eea;
+        }
+
+        .notification.info .notification-icon {
+            color: #667eea;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: #8a8f98;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 8px;
+            transition: color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .notification-close:hover {
+            color: #ffffff;
+        }
+
+        .notification-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #31a24c 0%, rgba(49, 162, 76, 0.2) 100%);
+            border-radius: 0 0 8px 8px;
+            animation: shrink 3s linear forwards;
+        }
+
+        @keyframes shrink {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1173,10 +1306,10 @@
             <input type="text" class="auth-input" id="profileNameInput" placeholder="Ваше имя" style="margin-bottom: 12px;">
             
             <select class="auth-input" id="profileStatusSelect" style="margin-bottom: 12px;">
-                <option value="online">🟢 Online</option>
-                <option value="away">🟡 Away</option>
-                <option value="dnd">🔴 Do Not Disturb</option>
-                <option value="offline">⚪ Offline</option>
+                <option value="online"><i class="fas fa-circle" style="color: #31a24c;"></i> Online</option>
+                <option value="away"><i class="fas fa-circle" style="color: #f39c12;"></i> Away</option>
+                <option value="dnd"><i class="fas fa-circle" style="color: #e74c3c;"></i> Do Not Disturb</option>
+                <option value="offline"><i class="fas fa-circle" style="color: #95a5a6;"></i> Offline</option>
             </select>
 
             <textarea class="auth-input" id="profileBioInput" placeholder="О себе..." style="margin-bottom: 12px; resize: vertical; min-height: 80px;"></textarea>
@@ -1201,6 +1334,10 @@
                 <!-- Цвета будут добавлены JavaScript -->
             </div>
         </div>
+    </div>
+
+    <!-- СИСТЕМА УВЕДОМЛЕНИЙ -->
+    <div id="notificationContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10001; display: flex; flex-direction: column; gap: 10px; max-width: 400px; pointer-events: none;">
     </div>
 
     <script type="module">
@@ -1274,6 +1411,49 @@
             '#00f2fe', '#43e97b', '#fa709a', '#fee140',
             '#30cfd0', '#330867', '#ff006e', '#8338ec'
         ];
+
+        // ============== СИСТЕМА УВЕДОМЛЕНИЙ ==============
+        function showNotification(title, message = '', type = 'info', duration = 3000) {
+            const container = document.getElementById('notificationContainer');
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.style.position = 'relative';
+            
+            const iconMap = {
+                success: '<i class="fas fa-check-circle"></i>',
+                error: '<i class="fas fa-exclamation-circle"></i>',
+                warning: '<i class="fas fa-warning"></i>',
+                info: '<i class="fas fa-info-circle"></i>'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">${iconMap[type]}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    ${message ? `<div class="notification-message">${message}</div>` : ''}
+                </div>
+                <button class="notification-close"><i class="fas fa-times"></i></button>
+                <div class="notification-progress"></div>
+            `;
+            
+            container.appendChild(notification);
+            
+            const closeBtn = notification.querySelector('.notification-close');
+            closeBtn.addEventListener('click', () => {
+                notification.classList.add('removing');
+                setTimeout(() => notification.remove(), 300);
+            });
+            
+            if (duration > 0) {
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.classList.add('removing');
+                        setTimeout(() => notification.remove(), 300);
+                    }
+                }, duration);
+            }
+        }
 
         // ============== УПРАВЛЕНИЕ ЭКРАНАМИ ==============
         function hideLoadingScreen() {
@@ -1357,10 +1537,10 @@
                 };
                 set(userRef, updates);
                 closeProfileModal();
-                alert('Профиль успешно сохранен!');
+                showNotification('Успех', 'Профиль успешно сохранен', 'success');
             } catch (error) {
                 console.error('Ошибка при сохранении профиля:', error);
-                alert('Ошибка: ' + error.message);
+                showNotification('Ошибка сохранения', error.message, 'error');
             }
         }
 
@@ -1374,7 +1554,7 @@
                 showAuthScreen();
                 hideLoadingScreen();
             } catch (error) {
-                alert('Ошибка при выходе: ' + error.message);
+                showNotification('Ошибка выхода', error.message, 'error');
             }
         }
         function setupAuthHandlers() {
@@ -1424,7 +1604,7 @@
                 hideAuthScreen();
                 init();
             } catch (error) {
-                alert('Ошибка входа: ' + error.message);
+                showNotification('Ошибка входа', error.message, 'error');
             }
         }
 
@@ -1435,7 +1615,7 @@
             const password = document.getElementById('passwordInput').value;
 
             if (!email || !password) {
-                alert('Введите почту и пароль');
+                showNotification('Ошибка', 'Введите почту и пароль', 'warning');
                 return;
             }
 
@@ -1444,20 +1624,43 @@
                 hideAuthScreen();
                 init();
             } catch (error) {
-                alert('Ошибка регистрации: ' + error.message);
+                showNotification('Ошибка регистрации', error.message, 'error');
             }
         }
 
         async function handleGoogleSignIn() {
-            if (!firebaseReady) return;
+            if (!firebaseReady) {
+                showNotification('Ошибка', 'Firebase не инициализирован', 'error');
+                return;
+            }
 
             try {
                 const provider = new GoogleAuthProvider();
+                provider.addScope('profile');
+                provider.addScope('email');
+                
+                // Установить язык на русский если возможно
+                auth.languageCode = 'ru';
+                
                 await signInWithPopup(auth, provider);
+                showNotification('Успех', 'Вы вошли через Google', 'success');
                 hideAuthScreen();
                 init();
             } catch (error) {
-                alert('Ошибка Google входа: ' + error.message);
+                console.error('Google Auth Error:', error.code, error.message);
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    // Пользователь закрыл окно - не показываем ошибку
+                    return;
+                }
+                
+                if (error.code === 'auth/popup-blocked') {
+                    showNotification('Всплывающее окно заблокировано', 'Разрешите всплывающие окна для этого сайта', 'warning');
+                } else if (error.code === 'auth/operation-not-supported-in-this-environment') {
+                    showNotification('Ошибка окружения', 'Google Sign-In не поддерживается в этом окружении', 'error');
+                } else {
+                    showNotification('Ошибка Google', error.message, 'error');
+                }
             }
         }
 
@@ -1465,38 +1668,55 @@
             e.preventDefault();
             if (!firebaseReady) return;
 
-            const phone = document.getElementById('phoneInput').value;
-            if (!phone) return;
+            const phone = document.getElementById('phoneInput').value.trim();
+            if (!phone) {
+                showNotification('Ошибка', 'Введите номер телефона', 'warning');
+                return;
+            }
 
             try {
+                // Убрать пробелы и спецсимволы
+                const cleanPhone = phone.replace(/[^\d+]/g, '');
+                
                 const appVerifier = new RecaptchaVerifier('recaptcha', {
                     'size': 'normal',
                     'callback': (response) => {}
                 }, auth);
 
-                confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+                confirmationResult = await signInWithPhoneNumber(auth, cleanPhone, appVerifier);
                 
                 document.getElementById('phoneInput').style.display = 'none';
                 document.getElementById('phoneCodeInput').style.display = 'block';
                 document.getElementById('verifyPhoneBtn').style.display = 'block';
-                document.querySelector('[data-tab="phone"]').closest('.auth-form').querySelector('button[type="submit"]').style.display = 'none';
+                document.getElementById('phoneForm').querySelector('button[type="submit"]').style.display = 'none';
                 
-                alert('Код отправлен на ваш номер');
+                showNotification('Успех', 'Код отправлен на ваш номер', 'success');
             } catch (error) {
-                alert('Ошибка: ' + error.message);
+                console.error('ОшибкаPhone Auth:', error);
+                showNotification('Ошибка отправки кода', error.message, 'error');
             }
         }
 
         async function handlePhoneVerify() {
-            if (!confirmationResult) return;
+            if (!confirmationResult) {
+                showNotification('Ошибка', 'Попробуйте отправить код еще раз', 'warning');
+                return;
+            }
 
-            const code = document.getElementById('phoneCodeInput').value;
+            const code = document.getElementById('phoneCodeInput').value.trim();
+            if (!code) {
+                showNotification('Ошибка', 'Введите код подтверждения', 'warning');
+                return;
+            }
+
             try {
                 await confirmationResult.confirm(code);
+                showNotification('Успех', 'Вы успешно вошли', 'success');
                 hideAuthScreen();
                 init();
             } catch (error) {
-                alert('Неверный код: ' + error.message);
+                console.error('Ошибка верификации:', error);
+                showNotification('Неверный код', error.message, 'error');
             }
         }
 
@@ -1644,7 +1864,7 @@ const firebaseConfig = {<br/>
             // Копирование ID
             document.getElementById('copyIdBtn').addEventListener('click', () => {
                 navigator.clipboard.writeText(currentUserId);
-                alert('ID скопирован в буфер обмена!');
+                showNotification('Успех', 'ID скопирован в буфер обмена', 'success');
             });
         }
 
@@ -1654,10 +1874,27 @@ const firebaseConfig = {<br/>
 
             updateUserIDDisplay();
 
-            // Установить статус онлайн
+            // Загрузить профиль пользователя
             const userRef = ref(database, `users/${currentUserId}`);
+            try {
+                onChildAdded(userRef, (snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        userProfile.name = userData.name || userProfile.name;
+                        userProfile.avatar = userData.avatar || userProfile.avatar;
+                        userProfile.bio = userData.bio || userProfile.bio;
+                        userProfile.status = userData.status || userProfile.status;
+                    }
+                });
+            } catch (e) {
+                console.log('Профиль загружен локально');
+            }
+
+            // Установить/обновить статус онлайн
             const userStatus = {
                 name: currentUser,
+                avatar: userProfile.avatar,
+                bio: userProfile.bio,
                 status: isLocalHost ? 'offline' : 'online',
                 lastSeen: serverTimestamp(),
                 isLocal: isLocalHost
@@ -1697,7 +1934,7 @@ const firebaseConfig = {<br/>
             const usersList = document.getElementById('usersList');
 
             if (searchQuery.length < 3 && searchQuery !== '') {
-                usersList.innerHTML = '<p style="color: #8a8f98; text-align: center; padding: 16px;">Введите минимум 3 символа</p>';
+                usersList.innerHTML = '<p style="color: #8a8f98; text-align: center; padding: 16px;"><i class="fas fa-search"></i> Введите минимум 3 символа</p>';
                 return;
             }
 
@@ -1708,6 +1945,20 @@ const firebaseConfig = {<br/>
 
             usersList.innerHTML = '';
 
+            const statusIcons = {
+                'online': '<span class="status-dot online"></span>',
+                'away': '<span class="status-dot away"></span>',
+                'dnd': '<span class="status-dot dnd"></span>',
+                'offline': '<span class="status-dot offline"></span>'
+            };
+
+            const statusTexts = {
+                'online': 'В сети',
+                'away': 'Отсутствует',
+                'dnd': 'Не беспокоить',
+                'offline': 'Офлайн'
+            };
+
             // Поиск по ID или имени
             onlineUsers.forEach((userData, userId) => {
                 if (userId !== currentUserId && 
@@ -1716,19 +1967,23 @@ const firebaseConfig = {<br/>
                     
                     const userDiv = document.createElement('div');
                     userDiv.className = 'user-item';
-                    const isOnline = userData.status === 'online';
+                    const userStatus = userData.status || 'offline';
+                    const avatarColor = userData.avatar || '#667eea';
                     
                     userDiv.innerHTML = `
                         <div class="user-item-info">
-                            <div class="user-item-avatar">${userData.name.charAt(0).toUpperCase()}</div>
+                            <div class="user-item-avatar" style="background: linear-gradient(135deg, ${avatarColor} 0%, rgba(255,255,255,0.1) 100%);">
+                                ${userData.name.charAt(0).toUpperCase()}
+                            </div>
                             <div class="user-item-details">
                                 <h4>${userData.name}</h4>
                                 <p>${userId.substring(0, 12)}...</p>
+                                ${userData.bio ? `<p style="font-size: 11px; color: #667eea;">${userData.bio}</p>` : ''}
                             </div>
                         </div>
                         <div class="user-status">
-                            <span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}"></span>
-                            ${isOnline ? 'В сети' : 'Офлайн'}
+                            ${statusIcons[userStatus] || statusIcons['offline']}
+                            ${statusTexts[userStatus] || 'Офлайн'}
                         </div>
                     `;
 
@@ -1742,7 +1997,7 @@ const firebaseConfig = {<br/>
             });
 
             if (usersList.innerHTML === '') {
-                usersList.innerHTML = '<p style="color: #8a8f98; text-align: center; padding: 16px;">Пользователи не найдены</p>';
+                usersList.innerHTML = '<p style="color: #8a8f98; text-align: center; padding: 16px;"><i class="fas fa-user-slash"></i> Пользователи не найдены</p>';
             }
         }
 
@@ -1765,8 +2020,22 @@ const firebaseConfig = {<br/>
             if (!chats.has(chatId)) {
                 const chatDiv = document.createElement('div');
                 chatDiv.className = 'chat-item';
+                const otherUserData = onlineUsers.get(otherUserId);
+                const avatarColor = otherUserData?.avatar || '#667eea';
+                const userStatus = otherUserData?.status || 'offline';
+                
+                const statusDots = {
+                    'online': '<span class="status-dot online" style="position: absolute; bottom: 0; right: 0;"></span>',
+                    'away': '<span class="status-dot away" style="position: absolute; bottom: 0; right: 0;"></span>',
+                    'dnd': '<span class="status-dot dnd" style="position: absolute; bottom: 0; right: 0;"></span>',
+                    'offline': '<span class="status-dot offline" style="position: absolute; bottom: 0; right: 0;"></span>'
+                };
+                
                 chatDiv.innerHTML = `
-                    <div class="avatar">${displayName.charAt(displayName.length - 1)}</div>
+                    <div class="avatar" style="background: linear-gradient(135deg, ${avatarColor} 0%, rgba(255,255,255,0.1) 100%); position: relative;">
+                        ${displayName.charAt(displayName.length - 1)}
+                        ${statusDots[userStatus] || statusDots['offline']}
+                    </div>
                     <div class="chat-info">
                         <h3>${displayName}</h3>
                         <p id="chat-status-${chatId}">Загрузка...</p>
@@ -1781,6 +2050,7 @@ const firebaseConfig = {<br/>
                     name: displayName,
                     type: 'direct',
                     otherUserId: otherUserId,
+                    avatar: avatarColor,
                     lastMessage: null
                 });
             }
@@ -1806,8 +2076,19 @@ const firebaseConfig = {<br/>
             if (!chats.has(chatName)) {
                 const chatDiv = document.createElement('div');
                 chatDiv.className = 'chat-item';
+                
+                const chatIcons = {
+                    'Общий чат': 'fa-users',
+                    'Объявления': 'fa-bullhorn',
+                    'Поддержка': 'fa-headset'
+                };
+                
+                const icon = chatIcons[chatName] || 'fa-comments';
+                
                 chatDiv.innerHTML = `
-                    <div class="avatar">${chatName.charAt(0).toUpperCase()}</div>
+                    <div class="avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas ${icon}"></i>
+                    </div>
                     <div class="chat-info">
                         <h3>${chatName}</h3>
                         <p>Нажмите для открытия</p>
@@ -1842,12 +2123,44 @@ const firebaseConfig = {<br/>
 
             // Обновить заголовок
             document.getElementById('chatName').textContent = chatData ? chatData.name : chatName;
-            const statusText = chatType === 'direct' ? 
-                (onlineUsers.get(chatData?.otherUserId)?.status === 'online' ? '● В сети' : '● Офлайн') :
-                '● В сети';
-            document.getElementById('chatStatus').textContent = statusText;
+            
+            // Обновить статус
+            const otherUserData = chatType === 'direct' ? onlineUsers.get(chatData?.otherUserId) : null;
+            const userStatus = otherUserData?.status || 'online';
+            
+            const statusIcons = {
+                'online': '<span class="status-dot online"></span>',
+                'away': '<span class="status-dot away"></span>',
+                'dnd': '<span class="status-dot dnd"></span>',
+                'offline': '<span class="status-dot offline"></span>'
+            };
+            
+            const statusTexts = {
+                'online': 'В сети',
+                'away': 'Отсутствует',
+                'dnd': 'Не беспокоить',
+                'offline': 'Офлайн'
+            };
+            
+            let statusHTML = '● В сети';
+            if (chatType === 'direct') {
+                statusHTML = (statusIcons[userStatus] || statusIcons['offline']) + ' ' + (statusTexts[userStatus] || 'Офлайн');
+            }
+            
+            document.getElementById('chatStatus').innerHTML = statusHTML;
+            
+            // Обновить аватар
+            const chatAvatarEl = document.getElementById('headerAvatar');
+            if (chatData && chatData.avatar) {
+                chatAvatarEl.style.background = `linear-gradient(135deg, ${chatData.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
+            } else {
+                chatAvatarEl.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+            chatAvatarEl.innerHTML = `<i class="fas fa-comments"></i>`;
             const avatarText = chatData ? chatData.name.charAt(0) : chatName.charAt(0);
-            document.getElementById('headerAvatar').textContent = avatarText.toUpperCase();
+            if (!chatData?.avatar) {
+                chatAvatarEl.textContent = avatarText.toUpperCase();
+            }
 
             // Очистить сообщения
             const messagesArea = document.getElementById('messagesArea');
@@ -1887,7 +2200,7 @@ const firebaseConfig = {<br/>
         // ============== ОТПРАВКА СООБЩЕНИЯ ==============
         function sendMessage() {
             if (!firebaseReady) {
-                alert('Firebase не подключен. Пожалуйста, настройте конфиг и обновите страницу.');
+                showNotification('Ошибка подключения', 'Firebase не подключен. Пожалуйста, настройте конфиг и обновите страницу.', 'error');
                 return;
             }
 
@@ -1910,7 +2223,7 @@ const firebaseConfig = {<br/>
 
             push(messagesRef, messageData).catch(error => {
                 console.error('Ошибка при отправке:', error);
-                alert('Ошибка: проверьте Firebase конфиг и интернет-соединение');
+                showNotification('Ошибка отправки', 'Проверьте Firebase конфиг и интернет-соединение', 'error');
             });
 
             messageInput.value = '';
