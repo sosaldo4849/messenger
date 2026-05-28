@@ -21,6 +21,10 @@
             overflow: hidden;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         /* ЭКРАН ЗАГРУЗКИ */
         .loading-screen {
             position: fixed;
@@ -1370,7 +1374,8 @@
 
             /* Шапка чата */
             .chat-header {
-                padding: 12px 16px;
+                height: 60px;
+                padding: 0 16px;
                 flex-direction: row;
                 gap: 8px;
             }
@@ -1390,6 +1395,7 @@
 
             .chat-header-buttons {
                 gap: 6px;
+                flex-shrink: 0;
             }
 
             .chat-header-btn {
@@ -2066,7 +2072,7 @@
     <script type="module">
         // ============== FIREBASE CONFIGURATION ==============
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, serverTimestamp, query, orderByChild, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, serverTimestamp, query, orderByChild, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
         import { 
             getAuth, 
             createUserWithEmailAndPassword, 
@@ -2076,7 +2082,8 @@
             signOut,
             onAuthStateChanged,
             RecaptchaVerifier,
-            signInWithPhoneNumber
+            signInWithPhoneNumber,
+            updateProfile
         } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
         // ⚠️ ПОДСТАВЬТЕ СВОЙ КОНФИГ ОТСЮДА: https://console.firebase.google.com/
@@ -2280,9 +2287,11 @@
                     lastSeen: serverTimestamp(),
                     isLocal: isLocalHost
                 };
-                set(userRef, updates);
+                await set(userRef, updates);
                 
                 localStorage.setItem('userSettings', JSON.stringify(settings));
+                localStorage.setItem('userName', userProfile.name);
+                localStorage.setItem('phoneNumber', phoneNumber);
                 
                 closeProfileModal();
                 showNotification('Успех', 'Профиль и настройки сохранены', 'success');
@@ -2542,8 +2551,39 @@
             }
 
             try {
-                await confirmationResult.confirm(code);
-                showNotification('Успех', 'Вы успешно вошли', 'success');
+                const result = await confirmationResult.confirm(code);
+                const user = result.user;
+                
+                // Инициализировать профиль для нового пользователя
+                const userRef = ref(database, `users/${user.uid}`);
+                const userSnapshot = await new Promise((resolve) => {
+                    onValue(userRef, resolve, { onlyOnce: true });
+                });
+                
+                if (!userSnapshot.exists()) {
+                    // Новый пользователь - создать профиль
+                    const phone = document.getElementById('phoneInput').value.trim().replace(/[^\d+]/g, '');
+                    set(userRef, {
+                        name: 'Пользователь',
+                        avatar: '#667eea',
+                        bio: '',
+                        phoneNumber: phone,
+                        status: 'online',
+                        settings: {
+                            onlineStatusVisible: true,
+                            callsAllowed: true,
+                            messageNotifications: true,
+                            soundNotifications: true,
+                            desktopNotifications: true
+                        },
+                        lastSeen: serverTimestamp(),
+                        isLocal: isLocalHost
+                    });
+                    showNotification('Успех', 'Профиль создан! Вы вошли', 'success');
+                } else {
+                    showNotification('Успех', 'Вы успешно вошли', 'success');
+                }
+                
                 hideAuthScreen();
                 init();
             } catch (error) {
@@ -2635,9 +2675,11 @@ const firebaseConfig = {<br/>
                 return;
             }
 
-            setupEventListeners();
-            setupUserStatus();
-            loadDefaultChat();
+            loadUserProfile().then(() => {
+                setupEventListeners();
+                setupUserStatus();
+                loadDefaultChat();
+            });
         }
 
         // Показать ID пользователя в интерфейсе
@@ -2837,36 +2879,41 @@ const firebaseConfig = {<br/>
         }
 
         // ============== УПРАВЛЕНИЕ СТАТУСОМ ПОЛЬЗОВАТЕЛЯ ==============
+        async function loadUserProfile() {
+            if (!firebaseReady || !currentUserId) return;
+
+            try {
+                const userRef = ref(database, `users/${currentUserId}`);
+                const snapshot = await new Promise((resolve) => {
+                    onValue(userRef, resolve, { onlyOnce: true });
+                });
+
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    userProfile.name = userData.name || userProfile.name;
+                    userProfile.avatar = userData.avatar || userProfile.avatar;
+                    userProfile.bio = userData.bio || userProfile.bio;
+                    userProfile.phoneNumber = userData.phoneNumber || '';
+                    userProfile.status = userData.status || userProfile.status;
+                    
+                    // Восстановить настройки
+                    if (userData.settings) {
+                        document.getElementById('onlineStatusVisible').checked = userData.settings.onlineStatusVisible ?? true;
+                        document.getElementById('callsAllowed').checked = userData.settings.callsAllowed ?? true;
+                        document.getElementById('messageNotifications').checked = userData.settings.messageNotifications ?? true;
+                        document.getElementById('soundNotifications').checked = userData.settings.soundNotifications ?? true;
+                        document.getElementById('desktopNotifications').checked = userData.settings.desktopNotifications ?? true;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка при загрузке профиля:', error.message);
+            }
+        }
+
         function setupUserStatus() {
             if (!firebaseReady) return;
 
             updateUserIDDisplay();
-
-            // Загрузить профиль пользователя
-            const userRef = ref(database, `users/${currentUserId}`);
-            try {
-                onChildAdded(userRef, (snapshot) => {
-                    const userData = snapshot.val();
-                    if (userData) {
-                        userProfile.name = userData.name || userProfile.name;
-                        userProfile.avatar = userData.avatar || userProfile.avatar;
-                        userProfile.bio = userData.bio || userProfile.bio;
-                        userProfile.phoneNumber = userData.phoneNumber || '';
-                        userProfile.status = userData.status || userProfile.status;
-                        
-                        // Восстановить настройки
-                        if (userData.settings) {
-                            document.getElementById('onlineStatusVisible').checked = userData.settings.onlineStatusVisible ?? true;
-                            document.getElementById('callsAllowed').checked = userData.settings.callsAllowed ?? true;
-                            document.getElementById('messageNotifications').checked = userData.settings.messageNotifications ?? true;
-                            document.getElementById('soundNotifications').checked = userData.settings.soundNotifications ?? true;
-                            document.getElementById('desktopNotifications').checked = userData.settings.desktopNotifications ?? true;
-                        }
-                    }
-                });
-            } catch (e) {
-                console.log('Профиль загружен локально');
-            }
 
             // Установить/обновить статус онлайн
             const userStatus = {
@@ -2879,20 +2926,48 @@ const firebaseConfig = {<br/>
                 isLocal: isLocalHost
             };
 
+            const userRef = ref(database, `users/${currentUserId}`);
             set(userRef, userStatus).catch(error => {
                 console.log('Не удалось установить статус:', error.message);
             });
 
-            // Слушать онлайн пользователей
+            // Слушать все пользователей и обновлять их в реальном времени
             const usersRef = ref(database, 'users');
             try {
-                onChildAdded(usersRef, (snapshot) => {
-                    const userId = snapshot.key;
-                    const userData = snapshot.val();
-                    onlineUsers.set(userId, userData);
+                onValue(usersRef, (snapshot) => {
+                    onlineUsers.clear();
+                    if (snapshot.exists()) {
+                        const users = snapshot.val();
+                        Object.entries(users).forEach(([userId, userData]) => {
+                            onlineUsers.set(userId, userData);
+                            // Обновить информацию в сайдбаре если это прямой чат
+                            updateSidebarUserStatus(userId, userData);
+                        });
+                    }
                 });
             } catch (error) {
                 console.log('Ошибка при загрузке пользователей:', error.message);
+            }
+        }
+
+        function updateSidebarUserStatus(userId, userData) {
+            // Найти элемент сайдбара для этого пользователя
+            const directChatId = [currentUserId, userId].sort().join('_');
+            const chatData = chats.get(directChatId);
+            
+            if (chatData && chatData.element) {
+                const statusEl = chatData.element.querySelector('.status-dot');
+                const statusMap = {
+                    'online': 'online',
+                    'away': 'away',
+                    'dnd': 'dnd',
+                    'offline': 'offline'
+                };
+                const userStatus = userData.status || 'offline';
+                
+                if (statusEl) {
+                    statusEl.className = `status-dot ${statusMap[userStatus]}`;
+                }
             }
         }
 
