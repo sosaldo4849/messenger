@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebMessenger - Firebase Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #0f1419;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ЛЕВАЯ ПАНЕЛЬ - СПИСОК ЧАТОВ */
+        .sidebar {
+            width: 300px;
+            background: #1a1f28;
+            border-right: 1px solid #2a2f38;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 8px 0;
+        }
+
+        .sidebar-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #31a24c;
+        }
+
+        .search-box {
+            width: 100%;
+            background: #2a2f38;
+            border: 1px solid #3a3f48;
+            border-radius: 24px;
+            padding: 10px 16px;
+            color: #ffffff;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .search-box::placeholder {
+            color: #8a8f98;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #31a24c;
+            background: #2d3240;
+        }
+
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 8px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .chat-item:hover {
+            background: #2a2f38;
+        }
+
+        .chat-item.active {
+            background: #31a24c;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            margin-right: 12px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .chat-info h3 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .chat-info p {
+            font-size: 12px;
+            color: #8a8f98;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .status-online {
+            background: #31a24c;
+            box-shadow: 0 0 8px rgba(49, 162, 76, 0.6);
+        }
+
+        .status-offline {
+            background: #8a8f98;
+        }
+
+        /* МОДАЛЬНОЕ ОКНО ПОИСКА */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #1a1f28;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #8a8f98;
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        .search-input {
+            width: 100%;
+            background: #2a2f38;
+            border: 1px solid #3a3f48;
+            border-radius: 8px;
+            padding: 12px;
+            color: #ffffff;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #31a24c;
+        }
+
+        .users-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #2a2f38;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .user-item:hover {
+            background: #31a24c;
+        }
+
+        .user-item-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .user-item-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .user-item-details h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .user-item-details p {
+            font-size: 12px;
+            color: #8a8f98;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #8a8f98;
+        }
+
+        .user-id-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #2a2f38;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .user-id-display code {
+            background: #0f1419;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .copy-btn {
+            background: #31a24c;
+            border: none;
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #2d934d;
+        }
+
+        /* ПРАВАЯ ПАНЕЛЬ - ОБЛАСТЬ ЧАТА */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f1419;
+        }
+
+        .chat-header {
+            background: #1a1f28;
+            border-bottom: 1px solid #2a2f38;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-header-info h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+
+        .chat-header-info p {
+            font-size: 12px;
+            color: #8a8f98;
+            margin-left: 12px;
+        }
+
+        .chat-header-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #2a2f38;
+            border: none;
+            color: #31a24c;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-btn:hover {
+            background: #31a24c;
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        /* ОБЛАСТЬ СООБЩЕНИЙ */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 50%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.other .message-bubble {
+            background: #2a2f38;
+            color: #ffffff;
+        }
+
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, #31a24c 0%, #2d934d 100%);
+            color: #ffffff;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 4px;
+            align-self: flex-end;
+        }
+
+        .message-author {
+            font-size: 12px;
+            font-weight: 600;
+            color: #8a8f98;
+            margin-bottom: 4px;
+        }
+
+        /* ПАНЕЛЬ ВВОДА */
+        .input-area {
+            background: #1a1f28;
+            border-top: 1px solid #2a2f38;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: #2a2f38;
+            border: 1px solid #3a3f48;
+            border-radius: 24px;
+            padding: 12px 16px;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #31a24c;
+        }
+
+        .input-wrapper textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            max-height: 100px;
+            font-family: inherit;
+        }
+
+        .input-wrapper textarea::placeholder {
+            color: #8a8f98;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #31a24c;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: #2d934d;
+            transform: scale(1.05);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            background: #3a3f48;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* ПУСТОЕ СОСТОЯНИЕ */
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #8a8f98;
+            font-size: 18px;
+        }
+
+        /* СКРОЛЛ */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3a3f48;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4f58;
+        }
+
+        /* АДАПТИВНОСТЬ */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .message-bubble {
+                max-width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ЛЕВАЯ ПАНЕЛЬ -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Chats</div>
+                <button id="addChatBtn" class="header-btn" title="Найти пользователя" style="margin-left: auto; width: 36px; height: 36px;">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="user-id-display">
+                <span>ID:</span>
+                <code id="userIdDisplay">...</code>
+                <button class="copy-btn" id="copyIdBtn">Копировать</button>
+            </div>
+            <input type="text" class="search-box" id="searchBox" placeholder="Поиск...">
+            <div class="chats-list" id="chatsList"></div>
+        </div>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <div class="avatar" id="headerAvatar">🔔</div>
+                    <div class="chat-header-info">
+                        <h2 id="chatName">Выберите чат</h2>
+                        <p id="chatStatus">Подключение...</p>
+                    </div>
+                </div>
+                <div class="chat-header-buttons">
+                    <button class="header-btn" id="callBtn" title="Звонок">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                    <button class="header-btn" id="videoBtn" title="Видеозвонок">
+                        <i class="fas fa-video"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <div class="empty-state">Выберите чат чтобы начать переписку</div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="Напишите сообщение..." rows="1"></textarea>
+                </div>
+                <button class="send-btn" id="sendBtn" title="Отправить">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬ ПОИСКА ПОЛЬЗОВАТЕЛЕЙ -->
+    <div class="modal" id="searchModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Найти пользователя</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <input type="text" class="search-input" id="userSearchInput" placeholder="Введите ID пользователя...">
+            <div class="users-list" id="usersList"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // ============== FIREBASE CONFIGURATION ==============
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, serverTimestamp, query, orderByChild, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+        // ⚠️ ПОДСТАВЬТЕ СВОЙ КОНФИГ ОТСЮДА: https://console.firebase.google.com/
+        const firebaseConfig = {
+            apiKey: "",
+            authDomain: "",
+            databaseURL: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: "",
+            measurementId: ""
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // ============== ПЕРЕМЕННЫЕ ПРИЛОЖЕНИЯ ==============
+        let currentUser = null;
+        let currentUserId = null;
+        let currentChat = null;
+        let currentChatType = 'group'; // 'group' или 'direct'
+        let loadedMessages = new Set();
+        const chats = new Map();
+        const onlineUsers = new Map();
+        let isLocalHost = false;
+
+        // ============== ИНИЦИАЛИЗАЦИЯ ==============
+        function init() {
+            // Определить, локальное ли приложение
+            isLocalHost = window.location.protocol === 'file:';
+
+            // Получение или создание уникального ID пользователя
+            const storedId = localStorage.getItem('userId');
+            if (storedId) {
+                currentUserId = storedId;
+            } else {
+                currentUserId = generateUUID();
+                localStorage.setItem('userId', currentUserId);
+            }
+
+            // Получение имени пользователя
+            const storedName = localStorage.getItem('userName');
+            if (storedName) {
+                currentUser = storedName;
+            } else {
+                currentUser = prompt('Введите ваше имя:') || 'Аноним';
+                localStorage.setItem('userName', currentUser);
+            }
+
+            // Показать ID пользователя
+            document.getElementById('userIdDisplay').textContent = currentUserId.substring(0, 12) + '...';
+
+            setupEventListeners();
+            setupUserStatus();
+            loadDefaultChat();
+        }
+
+        // ============== ОБРАБОТЧИКИ СОБЫТИЙ ==============
+        function setupEventListeners() {
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('messageInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            document.getElementById('messageInput').addEventListener('input', (e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+            });
+
+            document.getElementById('callBtn').addEventListener('click', () => {
+                alert(`Звонок для ${currentChat || 'чата'} будет реализован позже`);
+            });
+
+            document.getElementById('videoBtn').addEventListener('click', () => {
+                alert(`Видеозвонок для ${currentChat || 'чата'} будет реализован позже`);
+            });
+
+            // Поиск пользователей
+            document.getElementById('addChatBtn').addEventListener('click', openSearchModal);
+            document.getElementById('closeModalBtn').addEventListener('click', closeSearchModal);
+            document.getElementById('userSearchInput').addEventListener('input', searchUsers);
+            document.getElementById('searchModal').addEventListener('click', (e) => {
+                if (e.target.id === 'searchModal') closeSearchModal();
+            });
+
+            // Копирование ID
+            document.getElementById('copyIdBtn').addEventListener('click', () => {
+                navigator.clipboard.writeText(currentUserId);
+                alert('ID скопирован в буфер обмена!');
+            });
+        }
+
+        // ============== УПРАВЛЕНИЕ СТАТУСОМ ПОЛЬЗОВАТЕЛЯ ==============
+        function setupUserStatus() {
+            // Установить статус онлайн
+            const userRef = ref(database, `users/${currentUserId}`);
+            const userStatus = {
+                name: currentUser,
+                status: isLocalHost ? 'offline' : 'online',
+                lastSeen: serverTimestamp(),
+                isLocal: isLocalHost
+            };
+
+            set(userRef, userStatus).catch(error => {
+                console.log('Не удалось установить статус:', error.message);
+            });
+
+            // Слушать онлайн пользователей
+            const usersRef = ref(database, 'users');
+            try {
+                onChildAdded(usersRef, (snapshot) => {
+                    const userId = snapshot.key;
+                    const userData = snapshot.val();
+                    onlineUsers.set(userId, userData);
+                });
+            } catch (error) {
+                console.log('Ошибка при загрузке пользователей:', error.message);
+            }
+        }
+
+        // ============== ПОИСК И ЛИЧНЫЕ ЧАТЫ ==============
+        function openSearchModal() {
+            document.getElementById('searchModal').classList.add('active');
+            document.getElementById('userSearchInput').focus();
+            document.getElementById('usersList').innerHTML = '';
+        }
+
+        function closeSearchModal() {
+            document.getElementById('searchModal').classList.remove('active');
+            document.getElementById('userSearchInput').value = '';
+        }
+
+        function searchUsers() {
+            const searchQuery = document.getElementById('userSearchInput').value.trim().toLowerCase();
+            const usersList = document.getElementById('usersList');
+
+            if (searchQuery.length < 3 && searchQuery !== '') {
+                usersList.innerHTML = '<p style="color: #8a8f98; text-align: center; padding: 16px;">Введите минимум 3 символа</p>';
+                return;
+            }
+
+            if (searchQuery === '') {
+                usersList.innerHTML = '';
+                return;
+            }
+
+            usersList.innerHTML = '';
+
+            // Поиск по ID или имени
+            onlineUsers.forEach((userData, userId) => {
+                if (userId !== currentUserId && 
+                    (userId.toLowerCase().includes(searchQuery) || 
+                     userData.name.toLowerCase().includes(searchQuery))) {
+                    
+                    const userDiv = document.createElement('div');
+                    userDiv.className = 'user-item';
+                    const isOnline = userData.status === 'online';
+                    
+                    userDiv.innerHTML = `
+                        <div class="user-item-info">
+                            <div class="user-item-avatar">${userData.name.charAt(0).toUpperCase()}</div>
+                            <div class="user-item-details">
+                                <h4>${userData.name}</h4>
+                                <p>${userId.substring(0, 12)}...</p>
+                            </div>
+                        </div>
+                        <div class="user-status">
+                            <span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}"></span>
+                            ${isOnline ? 'В сети' : 'Офлайн'}
+                        </div>
+                    `;
+
+                    userDiv.addEventListener('click', () => {
+                        openDirectChat(userId, userData.name);
+                        closeSearchModal();
+                    });
+
+                    usersList.appendChild(userDiv);
+                }
+            });
+
+            if (usersList.innerHTML === '') {
+                usersList.innerHTML = '<p style="color: #8a8f98; text-align: center; padding: 16px;">Пользователи не найдены</p>';
+            }
+        }
+
+        function openDirectChat(userId, userName) {
+            // Создать уникальный ID для прямого чата
+            const directChatId = [currentUserId, userId].sort().join('_');
+            const chatDisplayName = `💬 ${userName}`;
+
+            // Проверить, есть ли уже такой чат
+            if (!chats.has(directChatId)) {
+                addDirectChatToSidebar(directChatId, chatDisplayName, userId);
+            }
+
+            openChat(directChatId, 'direct');
+        }
+
+        function addDirectChatToSidebar(chatId, displayName, otherUserId) {
+            const chatsList = document.getElementById('chatsList');
+            
+            if (!chats.has(chatId)) {
+                const chatDiv = document.createElement('div');
+                chatDiv.className = 'chat-item';
+                chatDiv.innerHTML = `
+                    <div class="avatar">${displayName.charAt(displayName.length - 1)}</div>
+                    <div class="chat-info">
+                        <h3>${displayName}</h3>
+                        <p id="chat-status-${chatId}">Загрузка...</p>
+                    </div>
+                `;
+                
+                chatDiv.addEventListener('click', () => openChat(chatId, 'direct'));
+                chatsList.insertBefore(chatDiv, chatsList.firstChild);
+                
+                chats.set(chatId, {
+                    element: chatDiv,
+                    name: displayName,
+                    type: 'direct',
+                    otherUserId: otherUserId,
+                    lastMessage: null
+                });
+            }
+        }
+
+        // ============== ЗАГРУЗКА ЧАТОВ ==
+        function loadDefaultChat() {
+            const defaultChats = ['Общий чат', 'Объявления', 'Поддержка'];
+            
+            defaultChats.forEach(chatName => {
+                addChatToSidebar(chatName);
+            });
+
+            // Автоматически открыть первый чат
+            if (defaultChats.length > 0) {
+                openChat(defaultChats[0]);
+            }
+        }
+
+        function addChatToSidebar(chatName) {
+            const chatsList = document.getElementById('chatsList');
+            
+            if (!chats.has(chatName)) {
+                const chatDiv = document.createElement('div');
+                chatDiv.className = 'chat-item';
+                chatDiv.innerHTML = `
+                    <div class="avatar">${chatName.charAt(0).toUpperCase()}</div>
+                    <div class="chat-info">
+                        <h3>${chatName}</h3>
+                        <p>Нажмите для открытия</p>
+                    </div>
+                `;
+                
+                chatDiv.addEventListener('click', () => openChat(chatName));
+                chatsList.appendChild(chatDiv);
+                
+                chats.set(chatName, {
+                    element: chatDiv,
+                    name: chatName,
+                    lastMessage: null
+                });
+            }
+        }
+
+        // ============== ОТКРЫТИЕ ЧАТА ==============
+        function openChat(chatName, chatType = 'group') {
+            currentChat = chatName;
+            currentChatType = chatType;
+            
+            // Обновить активный чат в сайдбаре
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const chatData = chats.get(chatName);
+            if (chatData) {
+                chatData.element.classList.add('active');
+            }
+
+            // Обновить заголовок
+            document.getElementById('chatName').textContent = chatData ? chatData.name : chatName;
+            const statusText = chatType === 'direct' ? 
+                (onlineUsers.get(chatData?.otherUserId)?.status === 'online' ? '● В сети' : '● Офлайн') :
+                '● В сети';
+            document.getElementById('chatStatus').textContent = statusText;
+            const avatarText = chatData ? chatData.name.charAt(0) : chatName.charAt(0);
+            document.getElementById('headerAvatar').textContent = avatarText.toUpperCase();
+
+            // Очистить сообщения
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.innerHTML = '';
+            loadedMessages.clear();
+
+            // Загрузить сообщения из Firebase
+            loadMessagesFromChat(chatName);
+
+            // Сфокусировать на input
+            document.getElementById('messageInput').focus();
+        }
+
+        // ============== ЗАГРУЗКА СООБЩЕНИЙ ==============
+        function loadMessagesFromChat(chatName) {
+            const dbPath = currentChatType === 'direct' ? `direct_messages/${chatName}` : `messages/${chatName}`;
+            const messagesRef = ref(database, dbPath);
+            
+            try {
+                onChildAdded(messagesRef, (snapshot) => {
+                    const messageId = snapshot.key;
+                    
+                    // Избежать дубликатов
+                    if (loadedMessages.has(messageId)) return;
+                    loadedMessages.add(messageId);
+
+                    const data = snapshot.val();
+                    displayMessage(data.name, data.text, data.timestamp, data.userId);
+                });
+            } catch (error) {
+                console.log('Ошибка при загрузке сообщений:', error.message);
+            }
+        }
+
+        // ============== ОТПРАВКА СООБЩЕНИЯ ==============
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const text = messageInput.value.trim();
+
+            if (!text || !currentChat) {
+                return;
+            }
+
+            const dbPath = currentChatType === 'direct' ? `direct_messages/${currentChat}` : `messages/${currentChat}`;
+            const messagesRef = ref(database, dbPath);
+
+            const messageData = {
+                name: currentUser,
+                userId: currentUserId,
+                text: text,
+                timestamp: serverTimestamp()
+            };
+
+            push(messagesRef, messageData).catch(error => {
+                console.error('Ошибка при отправке:', error);
+                alert('Ошибка: проверьте Firebase конфиг и интернет-соединение');
+            });
+
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            document.getElementById('sendBtn').disabled = false;
+        }
+
+        // ============== ОТОБРАЖЕНИЕ СООБЩЕНИЙ ==============
+        function displayMessage(name, text, timestamp, userId) {
+            const messagesArea = document.getElementById('messagesArea');
+            
+            // Очистить empty state если есть
+            if (messagesArea.querySelector('.empty-state')) {
+                messagesArea.innerHTML = '';
+            }
+
+            const messageDiv = document.createElement('div');
+            const isOwnMessage = userId === currentUserId;
+            messageDiv.className = `message ${isOwnMessage ? 'own' : 'other'}`;
+
+            const formattedTime = formatTime(timestamp);
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${!isOwnMessage ? `<div class="message-author">${name}</div>` : ''}
+                    <div class="message-text">${escapeHtml(text)}</div>
+                    <div class="message-time">${formattedTime}</div>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+            
+            // Автоскролл вниз
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // ============== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==============
+        function formatTime(timestamp) {
+            if (!timestamp) return 'сейчас';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffSeconds = Math.floor((now - date) / 1000);
+
+            if (diffSeconds < 60) return 'сейчас';
+            if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}м назад`;
+            if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}ч назад`;
+
+            return date.toLocaleString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // ============== ГЕНЕРАЦИЯ UUID ==============
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Запуск приложения
+        init();
+    </script>
+</body>
+</html>
