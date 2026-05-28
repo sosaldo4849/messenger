@@ -2882,6 +2882,7 @@ const firebaseConfig = {<br/>
                 setupEventListeners();
                 setupUserStatus();
                 setupIncomingCallListener(); // Слушать входящие звонки
+                setupDirectChatsListener(); // Слушать прямые чаты
                 loadDefaultChat();
             });
         }
@@ -3329,6 +3330,25 @@ const firebaseConfig = {<br/>
             }
 
             openChat(directChatId, 'direct');
+        }
+
+        function setupDirectChatsListener() {
+            if (!firebaseReady || !currentUserId) return;
+
+            const directMessagesRef = ref(database, 'direct_messages');
+            onChildAdded(directMessagesRef, (snapshot) => {
+                const directChatId = snapshot.key;
+                if (!directChatId || !directChatId.includes(currentUserId)) return;
+
+                if (chats.has(directChatId)) return;
+
+                const participants = directChatId.split('_');
+                const otherUserId = participants[0] === currentUserId ? participants[1] : participants[0];
+                const otherUserData = onlineUsers.get(otherUserId);
+                const displayName = otherUserData ? `💬 ${otherUserData.name}` : `💬 ${otherUserId.substring(0, 12)}...`;
+
+                addDirectChatToSidebar(directChatId, displayName, otherUserId);
+            });
         }
 
         function addDirectChatToSidebar(chatId, displayName, otherUserId) {
