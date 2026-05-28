@@ -94,6 +94,43 @@
             to { opacity: 1; }
         }
 
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(49, 162, 76, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(49, 162, 76, 0.6); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
         /* ЭКРАН АВТОРИЗАЦИИ */
         .auth-screen {
             position: fixed;
@@ -226,6 +263,24 @@
 
         .auth-input::placeholder {
             color: #8a8f98;
+        }
+
+        .auth-input i {
+            margin-right: 8px;
+        }
+
+        .profile-color-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .profile-color-circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
         }
 
         .auth-btn {
@@ -597,6 +652,61 @@
             background: #2d934d;
         }
 
+        .user-profile-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-profile-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(49, 162, 76, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background: #31a24c;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .status-dot.away {
+            background: #f39c12;
+        }
+
+        .status-dot.dnd {
+            background: #e74c3c;
+        }
+
+        .status-dot.offline {
+            background: #95a5a6;
+        }
+
         /* ПРАВАЯ ПАНЕЛЬ - ОБЛАСТЬ ЧАТА */
         .chat-container {
             flex: 1;
@@ -927,7 +1037,7 @@
 <body>
     <!-- ЭКРАН ЗАГРУЗКИ -->
     <div class="loading-screen" id="loadingScreen">
-        <div class="loading-logo">🔗</div>
+        <div class="loading-logo"><i class="fas fa-comments"></i></div>
         <div class="loading-text">DildoGram</div>
         <div class="loading-spinner"></div>
     </div>
@@ -936,33 +1046,33 @@
     <div class="auth-screen" id="authScreen">
         <div class="auth-container">
             <div class="auth-header">
-                <div class="auth-logo">🔗</div>
+                <div class="auth-logo"><i class="fas fa-comments"></i></div>
                 <div class="auth-title">DildoGram</div>
                 <div class="auth-subtitle">Самый быстрый мессенджер</div>
             </div>
 
             <div class="auth-tab-buttons">
-                <button class="auth-tab-btn active" data-tab="email">📧 Почта</button>
-                <button class="auth-tab-btn" data-tab="phone">📱 Телефон</button>
-                <button class="auth-tab-btn" data-tab="google">🔐 Google</button>
+                <button class="auth-tab-btn active" data-tab="email"><i class="fas fa-envelope"></i> Почта</button>
+                <button class="auth-tab-btn" data-tab="phone"><i class="fas fa-phone"></i> Телефон</button>
+                <button class="auth-tab-btn" data-tab="google"><i class="fab fa-google"></i> Google</button>
             </div>
 
             <!-- ВКЛАДКА ПОЧТА -->
             <form class="auth-form active" id="emailForm" data-tab="email">
                 <input type="email" class="auth-input" id="emailInput" placeholder="Введите почту..." required>
                 <input type="password" class="auth-input" id="passwordInput" placeholder="Пароль..." required>
-                <button type="submit" class="auth-btn">Войти</button>
+                <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Войти</button>
                 <div class="auth-divider">или</div>
-                <button type="button" class="auth-btn" id="registerBtn">Создать аккаунт</button>
+                <button type="button" class="auth-btn" id="registerBtn"><i class="fas fa-user-plus"></i> Создать аккаунт</button>
             </form>
 
             <!-- ВКЛАДКА ТЕЛЕФОН -->
             <form class="auth-form" id="phoneForm" data-tab="phone">
                 <input type="tel" class="auth-input" id="phoneInput" placeholder="+7 (999) 999-99-99" required>
                 <div id="recaptcha"></div>
-                <button type="submit" class="auth-btn phone">Отправить код</button>
+                <button type="submit" class="auth-btn phone"><i class="fas fa-sms"></i> Отправить код</button>
                 <input type="text" class="auth-input" id="phoneCodeInput" placeholder="Код из SMS" style="display:none;">
-                <button type="button" class="auth-btn phone" id="verifyPhoneBtn" style="display:none;">Подтвердить</button>
+                <button type="button" class="auth-btn phone" id="verifyPhoneBtn" style="display:none;"><i class="fas fa-check"></i> Подтвердить</button>
             </form>
 
             <!-- ВКЛАДКА GOOGLE -->
@@ -981,15 +1091,18 @@
         <!-- ЛЕВАЯ ПАНЕЛЬ -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-title">Chats</div>
+                <div class="sidebar-title"><i class="fas fa-comments"></i> Чаты</div>
                 <button id="addChatBtn" class="header-btn" title="Найти пользователя" style="margin-left: auto; width: 36px; height: 36px;">
                     <i class="fas fa-plus"></i>
                 </button>
+                <button id="profileBtn" class="header-btn" title="Мой профиль" style="width: 36px; height: 36px;">
+                    <i class="fas fa-user-circle"></i>
+                </button>
             </div>
             <div class="user-id-display">
-                <span>ID:</span>
+                <span><i class="fas fa-key"></i> ID:</span>
                 <code id="userIdDisplay">...</code>
-                <button class="copy-btn" id="copyIdBtn">Копировать</button>
+                <button class="copy-btn" id="copyIdBtn"><i class="fas fa-copy"></i></button>
             </div>
             <input type="text" class="search-box" id="searchBox" placeholder="Поиск...">
             <div class="chats-list" id="chatsList"></div>
@@ -1039,6 +1152,54 @@
             </div>
             <input type="text" class="search-input" id="userSearchInput" placeholder="Введите ID пользователя...">
             <div class="users-list" id="usersList"></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬ РЕДАКТИРОВАНИЯ ПРОФИЛЯ -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Мой профиль</h3>
+                <button class="modal-close" id="closeProfileModalBtn">&times;</button>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div id="profileAvatarDisplay" style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; transition: all 0.3s; border: 3px solid #31a24c;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <p style="color: #8a8f98; font-size: 12px; margin-bottom: 15px;">Нажмите на аватар чтобы выбрать цвет</p>
+            </div>
+
+            <input type="text" class="auth-input" id="profileNameInput" placeholder="Ваше имя" style="margin-bottom: 12px;">
+            
+            <select class="auth-input" id="profileStatusSelect" style="margin-bottom: 12px;">
+                <option value="online">🟢 Online</option>
+                <option value="away">🟡 Away</option>
+                <option value="dnd">🔴 Do Not Disturb</option>
+                <option value="offline">⚪ Offline</option>
+            </select>
+
+            <textarea class="auth-input" id="profileBioInput" placeholder="О себе..." style="margin-bottom: 12px; resize: vertical; min-height: 80px;"></textarea>
+
+            <button type="button" class="auth-btn" id="saveProfileBtn" style="margin-bottom: 12px;">
+                <i class="fas fa-save"></i> Сохранить профиль
+            </button>
+            <button type="button" class="auth-btn" id="logoutBtn" style="background: #e74c3c; margin-bottom: 0;">
+                <i class="fas fa-sign-out-alt"></i> Выход
+            </button>
+        </div>
+    </div>
+
+    <!-- ЦВЕТОВАЯ ПАЛИТРА АВАТАРА -->
+    <div class="modal" id="colorPickerModal">
+        <div class="modal-content" style="max-width: 300px;">
+            <div class="modal-header">
+                <h3>Выбор цвета</h3>
+                <button class="modal-close" id="closeColorPickerBtn">&times;</button>
+            </div>
+            <div id="colorPicker" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <!-- Цвета будут добавлены JavaScript -->
+            </div>
         </div>
     </div>
 
@@ -1101,6 +1262,18 @@
         const onlineUsers = new Map();
         let isLocalHost = false;
         let confirmationResult = null;
+        let userProfile = {
+            name: 'Пользователь',
+            avatar: '#667eea',
+            bio: '',
+            status: 'online'
+        };
+
+        const avatarColors = [
+            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+            '#00f2fe', '#43e97b', '#fa709a', '#fee140',
+            '#30cfd0', '#330867', '#ff006e', '#8338ec'
+        ];
 
         // ============== УПРАВЛЕНИЕ ЭКРАНАМИ ==============
         function hideLoadingScreen() {
@@ -1117,7 +1290,93 @@
             document.getElementById('authScreen').classList.remove('hidden');
         }
 
-        // ============== АВТОРИЗАЦИЯ ==============
+        // ============== УПРАВЛЕНИЕ ПРОФИЛЕМ ==============
+        function openProfileModal() {
+            document.getElementById('profileModal').classList.add('active');
+            document.getElementById('profileNameInput').value = userProfile.name;
+            document.getElementById('profileStatusSelect').value = userProfile.status;
+            document.getElementById('profileBioInput').value = userProfile.bio;
+            updateProfileAvatarDisplay();
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        function closeColorPickerModal() {
+            document.getElementById('colorPickerModal').classList.remove('active');
+        }
+
+        function updateProfileAvatarDisplay() {
+            const avatarEl = document.getElementById('profileAvatarDisplay');
+            avatarEl.style.background = `linear-gradient(135deg, ${userProfile.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
+            avatarEl.innerHTML = '<i class="fas fa-user"></i>';
+        }
+
+        function openColorPickerModal() {
+            const picker = document.getElementById('colorPicker');
+            picker.innerHTML = '';
+            avatarColors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'profile-color-circle';
+                colorDiv.style.background = `linear-gradient(135deg, ${color} 0%, rgba(255,255,255,0.1) 100%)`;
+                if (userProfile.avatar === color) {
+                    colorDiv.style.border = '3px solid #31a24c';
+                }
+                colorDiv.addEventListener('click', () => {
+                    userProfile.avatar = color;
+                    updateProfileAvatarDisplay();
+                    closeColorPickerModal();
+                    saveProfile();
+                });
+                picker.appendChild(colorDiv);
+            });
+            document.getElementById('colorPickerModal').classList.add('active');
+        }
+
+        async function saveProfile() {
+            if (!firebaseReady) return;
+
+            const name = document.getElementById('profileNameInput')?.value || userProfile.name;
+            const status = document.getElementById('profileStatusSelect')?.value || userProfile.status;
+            const bio = document.getElementById('profileBioInput')?.value || userProfile.bio;
+
+            userProfile.name = name;
+            userProfile.status = status;
+            userProfile.bio = bio;
+
+            try {
+                const userRef = ref(database, `users/${currentUserId}`);
+                const updates = {
+                    name: userProfile.name,
+                    avatar: userProfile.avatar,
+                    bio: userProfile.bio,
+                    status: userProfile.status,
+                    lastSeen: serverTimestamp(),
+                    isLocal: isLocalHost
+                };
+                set(userRef, updates);
+                closeProfileModal();
+                alert('Профиль успешно сохранен!');
+            } catch (error) {
+                console.error('Ошибка при сохранении профиля:', error);
+                alert('Ошибка: ' + error.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                await signOut(auth);
+                currentUser = null;
+                currentUserId = null;
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userName');
+                showAuthScreen();
+                hideLoadingScreen();
+            } catch (error) {
+                alert('Ошибка при выходе: ' + error.message);
+            }
+        }
         function setupAuthHandlers() {
             // Вкладки
             document.querySelectorAll('.auth-tab-btn').forEach(btn => {
@@ -1366,6 +1625,20 @@ const firebaseConfig = {<br/>
             document.getElementById('userSearchInput').addEventListener('input', searchUsers);
             document.getElementById('searchModal').addEventListener('click', (e) => {
                 if (e.target.id === 'searchModal') closeSearchModal();
+            });
+
+            // Профиль
+            document.getElementById('profileBtn').addEventListener('click', openProfileModal);
+            document.getElementById('closeProfileModalBtn').addEventListener('click', closeProfileModal);
+            document.getElementById('closeColorPickerBtn').addEventListener('click', closeColorPickerModal);
+            document.getElementById('profileAvatarDisplay').addEventListener('click', openColorPickerModal);
+            document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('profileModal').addEventListener('click', (e) => {
+                if (e.target.id === 'profileModal') closeProfileModal();
+            });
+            document.getElementById('colorPickerModal').addEventListener('click', (e) => {
+                if (e.target.id === 'colorPickerModal') closeColorPickerModal();
             });
 
             // Копирование ID
