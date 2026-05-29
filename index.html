@@ -93,11 +93,6 @@
             }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
         @keyframes slideInLeft {
             from {
                 opacity: 0;
@@ -537,11 +532,6 @@
             animation: fadeIn 0.2s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
         .modal.active {
             display: flex;
             align-items: center;
@@ -556,17 +546,6 @@
             max-width: 500px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
         }
 
         .modal-header {
@@ -2588,6 +2567,7 @@
             window.currentGroupName = groupName;
             document.getElementById('groupManagementModal').classList.add('active');
             document.getElementById('groupNameInput').value = groupName;
+            setupGroupColorPicker();
             loadGroupMetadata(groupName).then(metadata => {
                 if (metadata.avatar) {
                     document.getElementById('groupAvatarPreview').style.background = `linear-gradient(135deg, ${metadata.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
@@ -3275,13 +3255,12 @@ const firebaseConfig = {<br/>
                 });
             }
 
-            // Закрыть сайдбар при клике на чат
-            document.querySelectorAll('.chat-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    if (window.innerWidth <= 768) {
-                        sidebar.classList.remove('mobile-open');
-                    }
-                });
+            // Закрыть сайдбар при клике на чат (делегирование для динамических элементов)
+            document.getElementById('chatsList').addEventListener('click', (e) => {
+                const chatItem = e.target.closest('.chat-item');
+                if (chatItem && window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-open');
+                }
             });
 
             document.getElementById('callBtn').addEventListener('click', () => {
@@ -3512,7 +3491,13 @@ const firebaseConfig = {<br/>
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     userProfile.name = userData.name || userProfile.name;
-                    userProfile.avatar = userData.avatar || userProfile.avatar;
+                    if (userData.avatar && userData.avatar.startsWith('data:')) {
+                        userProfile.avatarImage = userData.avatar;
+                        userProfile.avatar = '#667eea';
+                    } else {
+                        userProfile.avatar = userData.avatar || userProfile.avatar;
+                        userProfile.avatarImage = null;
+                    }
                     userProfile.bio = userData.bio || userProfile.bio;
                     userProfile.phoneNumber = userData.phoneNumber || '';
                     userProfile.status = userData.status || userProfile.status;
@@ -3944,20 +3929,17 @@ const firebaseConfig = {<br/>
             
             // Обновить аватар
             const chatAvatarEl = document.getElementById('headerAvatar');
+            const avatarText = chatData ? chatData.name.charAt(0) : chatName.charAt(0);
             if (chatData && chatData.avatar) {
                 if (chatData.avatar.startsWith('http') || chatData.avatar.startsWith('data:')) {
-                    // It's an image URL
                     chatAvatarEl.style.background = `url(${chatData.avatar}) center/cover`;
+                    chatAvatarEl.innerHTML = '';
                 } else {
-                    // It's a color
                     chatAvatarEl.style.background = `linear-gradient(135deg, ${chatData.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
+                    chatAvatarEl.textContent = avatarText.toUpperCase();
                 }
             } else {
                 chatAvatarEl.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
-            chatAvatarEl.innerHTML = `<i class="fas fa-comments"></i>`;
-            const avatarText = chatData ? chatData.name.charAt(0) : chatName.charAt(0);
-            if (!chatData?.avatar || (chatData.avatar && !chatData.avatar.startsWith('http') && !chatData.avatar.startsWith('data:'))) {
                 chatAvatarEl.textContent = avatarText.toUpperCase();
             }
 
@@ -4105,6 +4087,7 @@ const firebaseConfig = {<br/>
 
             displayModalImage();
             document.getElementById('imageModal').classList.add('active');
+            document.body.classList.add('modal-open');
         }
 
         function displayModalImage() {
@@ -4130,6 +4113,7 @@ const firebaseConfig = {<br/>
 
         function closeImageModal() {
             document.getElementById('imageModal').classList.remove('active');
+            document.body.classList.remove('modal-open');
         }
 
         // ============== ОТПРАВКА СООБЩЕНИЯ ==============
@@ -4328,6 +4312,7 @@ const firebaseConfig = {<br/>
         window.addChatToSidebar = addChatToSidebar;
         window.setupEventListeners = setupEventListeners;
         window.initiateCall = initiateCall;
+        window.startCallToUser = startCallToUser;
         window.setupAuthHandlers = setupAuthHandlers;
         window.hideLoadingScreen = hideLoadingScreen;
         window.init = init;
