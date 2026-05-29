@@ -446,6 +446,9 @@
             margin-right: 12px;
             flex-shrink: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
         }
 
         .chat-info h3 {
@@ -923,46 +926,163 @@
 
         .image-remove {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.7);
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
             color: #ffffff;
             border: none;
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
+            padding: 0;
         }
 
         .image-remove:hover {
-            background: rgba(0, 0, 0, 0.9);
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+
+        /* МОДАЛЬ ПРОСМОТРА ФОТОГРАФИЙ */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .image-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-modal-content img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 2001;
+        }
+
+        .image-modal-close:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .image-modal-nav {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 2001;
+        }
+
+        .image-modal-nav:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .image-modal-prev {
+            left: 20px;
+        }
+
+        .image-modal-next {
+            right: 20px;
+        }
+
+        .image-modal-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
         }
 
         /* ПАНЕЛЬ ВВОДА */
         .input-area {
             background: #1a1f28;
             border-top: 1px solid #2a2f38;
-            padding: 16px;
+            padding: 12px 16px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: nowrap;
+            position: relative;
+        }
+
+        #imagePreviewArea {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            align-items: flex-end;
+            gap: 6px;
+            width: 100%;
+            margin-bottom: 8px;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            padding: 0 16px 8px;
+            background: #1a1f28;
+            border-bottom: 1px solid #2a2f38;
         }
 
         .input-wrapper {
-            flex: 1;
-            min-width: 200px;
+            flex: 1 1 auto;
+            min-width: 0;
             display: flex;
             align-items: center;
             background: #2a2f38;
             border: 1px solid #3a3f48;
             border-radius: 24px;
-            padding: 12px 16px;
+            padding: 10px 16px;
             transition: border-color 0.2s ease;
         }
 
@@ -986,27 +1106,24 @@
             color: #8a8f98;
         }
 
-        #imagePreviewArea {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px;
-            width: 100%;
-        }
-
         .image-preview {
             position: relative;
             display: inline-block;
-            max-width: 80px;
-            margin-bottom: 8px;
+            max-width: 60px;
         }
 
         .image-preview-img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 2px solid #31a24c;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .image-preview-img:hover {
+            transform: scale(1.05);
         }
 
         .image-remove {
@@ -1034,14 +1151,14 @@
         }
 
         .file-input-btn {
-            width: 44px;
-            height: 44px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             background: #667eea;
             border: none;
             color: #ffffff;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
@@ -1063,14 +1180,14 @@
         }
 
         .send-btn {
-            width: 44px;
-            height: 44px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             background: #31a24c;
             border: none;
             color: #ffffff;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
@@ -2083,11 +2200,11 @@
                 <div class="empty-state">Выберите чат чтобы начать переписку</div>
             </div>
 
+            <div id="imagePreviewArea"></div>
             <div class="input-area">
                 <div class="input-wrapper">
                     <textarea id="messageInput" placeholder="Напишите сообщение..." rows="1"></textarea>
                 </div>
-                <div id="imagePreviewArea"></div>
                 <input type="file" id="imageInput" accept="image/*" multiple />
                 <button class="file-input-btn" id="photoBtn" title="Прикрепить фото">
                     <i class="fas fa-image"></i>
@@ -2096,6 +2213,23 @@
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬ ПРОСМОТРА ФОТОГРАФИЙ -->
+    <div class="image-modal" id="imageModal">
+        <div class="image-modal-content">
+            <button class="image-modal-close" id="imageModalClose" title="Закрыть">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="image-modal-nav image-modal-prev" id="imagePrev" style="display: none;" title="Предыдущая">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <img id="modalImage" src="" alt="Full size image" style="cursor: default;">
+            <button class="image-modal-nav image-modal-next" id="imageNext" style="display: none;" title="Следующая">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="image-modal-counter" id="imageCounter" style="display: none;"></div>
         </div>
     </div>
 
@@ -2127,7 +2261,7 @@
             <!-- ТАБ ОСНОВНОЕ -->
             <div class="profile-tab-content active" data-profile-tab="main">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <div id="profileAvatarDisplay" style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; transition: all 0.3s; border: 3px solid #31a24c; position: relative; overflow: hidden;">
+                    <div id="profileAvatarDisplay" style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-size: cover; background-position: center; color: white; cursor: pointer; transition: all 0.3s; border: 3px solid #31a24c; position: relative; overflow: hidden;">
                         <i class="fas fa-user"></i>
                         <div style="position: absolute; bottom: 0; right: 0; background: #31a24c; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
                             <i class="fas fa-camera" style="color: white; font-size: 16px;"></i>
@@ -2221,7 +2355,7 @@
             </div>
             <div style="padding: 20px;">
                 <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-                    <div id="groupAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; cursor: pointer;">
+                    <div id="groupAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; cursor: pointer; overflow: hidden;">
                         <i class="fas fa-users"></i>
                     </div>
                     <div>
@@ -2299,7 +2433,7 @@
     <script type="module">
         // ============== FIREBASE CONFIGURATION ==============
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, onChildChanged, serverTimestamp, query, orderByChild, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, onChildChanged, off, serverTimestamp, query, orderByChild, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
         import { 
             getAuth, 
             createUserWithEmailAndPassword, 
@@ -2352,6 +2486,8 @@
         let currentChat = null;
         let currentChatType = 'group'; // 'group' или 'direct'
         let loadedMessages = new Set();
+        let currentMessagesRef = null;
+        let currentMessagesListener = null;
         const chats = new Map();
         const onlineUsers = new Map();
         let isLocalHost = false;
@@ -3273,6 +3409,38 @@ const firebaseConfig = {<br/>
             document.getElementById('groupManagementModal').addEventListener('click', (e) => {
                 if (e.target.id === 'groupManagementModal') closeGroupManagementModal();
             });
+
+            // Обработчики для модали просмотра фотографий
+            document.getElementById('imageModalClose').addEventListener('click', closeImageModal);
+            document.getElementById('imagePrev').addEventListener('click', () => {
+                if (currentImageIndex > 0) {
+                    currentImageIndex--;
+                    displayModalImage();
+                }
+            });
+            document.getElementById('imageNext').addEventListener('click', () => {
+                if (currentImageIndex < currentModalImages.length - 1) {
+                    currentImageIndex++;
+                    displayModalImage();
+                }
+            });
+            document.getElementById('imageModal').addEventListener('click', (e) => {
+                if (e.target.id === 'imageModal') closeImageModal();
+            });
+
+            // Клавиши для навигации
+            document.addEventListener('keydown', (e) => {
+                if (!document.getElementById('imageModal').classList.contains('active')) return;
+                if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
+                    currentImageIndex--;
+                    displayModalImage();
+                } else if (e.key === 'ArrowRight' && currentImageIndex < currentModalImages.length - 1) {
+                    currentImageIndex++;
+                    displayModalImage();
+                } else if (e.key === 'Escape') {
+                    closeImageModal();
+                }
+            });
         }
 
         function switchProfileTab(tabName) {
@@ -3544,14 +3712,14 @@ const firebaseConfig = {<br/>
             });
         }
 
-        function addDirectChatToSidebar(chatId, displayName, otherUserId) {
+        function addDirectChatToSidebar(chatId, displayName, otherUserId, avatarColor = '#667eea', save = true) {
             const chatsList = document.getElementById('chatsList');
             
             if (!chats.has(chatId)) {
                 const chatDiv = document.createElement('div');
                 chatDiv.className = 'chat-item';
                 const otherUserData = onlineUsers.get(otherUserId);
-                const avatarColor = otherUserData?.avatar || '#667eea';
+                const finalAvatarColor = avatarColor;
                 const userStatus = otherUserData?.status || 'offline';
                 
                 const statusDots = {
@@ -3561,10 +3729,26 @@ const firebaseConfig = {<br/>
                     'offline': '<span class="status-dot offline" style="position: absolute; bottom: 0; right: 0;"></span>'
                 };
                 
+                // Determine if avatar is an image URL or a color
+                let avatarStyle = '';
+                if (finalAvatarColor && finalAvatarColor.startsWith('http')) {
+                    // It's an image URL
+                    avatarStyle = `background: url(${finalAvatarColor}) center/cover; position: relative;`;
+                } else if (finalAvatarColor && finalAvatarColor.startsWith('data:')) {
+                    // It's a data URL
+                    avatarStyle = `background: url(${finalAvatarColor}) center/cover; position: relative;`;
+                } else {
+                    // It's a color
+                    avatarStyle = `background: linear-gradient(135deg, ${finalAvatarColor} 0%, rgba(255,255,255,0.1) 100%); position: relative;`;
+                }
+                
+                const avatarContent = (finalAvatarColor && (finalAvatarColor.startsWith('http') || finalAvatarColor.startsWith('data:'))) 
+                    ? `${statusDots[userStatus] || statusDots['offline']}`
+                    : `${displayName.charAt(displayName.length - 1)}${statusDots[userStatus] || statusDots['offline']}`;
+                
                 chatDiv.innerHTML = `
-                    <div class="avatar" style="background: linear-gradient(135deg, ${avatarColor} 0%, rgba(255,255,255,0.1) 100%); position: relative;">
-                        ${displayName.charAt(displayName.length - 1)}
-                        ${statusDots[userStatus] || statusDots['offline']}
+                    <div class="avatar" style="${avatarStyle}">
+                        ${avatarContent}
                     </div>
                     <div class="chat-info">
                         <h3>${displayName}</h3>
@@ -3576,34 +3760,113 @@ const firebaseConfig = {<br/>
                 chatsList.insertBefore(chatDiv, chatsList.firstChild);
                 
                 chats.set(chatId, {
+                    id: chatId,
                     element: chatDiv,
                     name: displayName,
                     type: 'direct',
                     otherUserId: otherUserId,
-                    avatar: avatarColor,
+                    avatar: finalAvatarColor,
                     lastMessage: null
                 });
+
+                if (save) {
+                    saveDirectChatToStorage(chatId, displayName, otherUserId, finalAvatarColor);
+                }
             }
         }
 
-        // ============== ЗАГРУЗКА ЧАТОВ ==
+        function loadDirectChatsFromStorage() {
+            try {
+                const key = `direct_chats_${currentUserId}`;
+                const stored = localStorage.getItem(key);
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.warn('Не удалось загрузить прямые чаты из localStorage:', e);
+                return [];
+            }
+        }
+
+        // ============== ЗАГРУЗКА ЧАТОВ ==============
         function loadDefaultChat() {
-            const defaultChats = ['Общий чат', 'Объявления', 'Поддержка'];
-            
-            defaultChats.forEach(chatName => {
-                addChatToSidebar(chatName);
-            });
+            const savedChats = loadChatsFromStorage();
+            const savedDirectChats = loadDirectChatsFromStorage();
 
-            // Автоматически открыть первый чат
-            if (defaultChats.length > 0) {
-                openChat(defaultChats[0]);
+            if (savedChats && savedChats.length > 0) {
+                savedChats.forEach(chatItem => {
+                    addChatToSidebar(chatItem.id, chatItem.name, false);
+                });
+            } else {
+                const defaultChats = ['Общий чат', 'Объявления', 'Поддержка'];
+                const savedDefault = defaultChats.map(name => ({ id: name, type: 'group', name }));
+                savedDefault.forEach(chatItem => addChatToSidebar(chatItem.id, chatItem.name, false));
+                saveChatsToStorage(savedDefault);
+            }
+
+            if (savedDirectChats && savedDirectChats.length > 0) {
+                savedDirectChats.forEach(chatItem => {
+                    addDirectChatToSidebar(chatItem.chatId, chatItem.displayName, chatItem.otherUserId, chatItem.avatar, false);
+                });
+            }
+
+            const firstChat = document.querySelector('.chat-item');
+            if (firstChat) {
+                const firstChatId = firstChat.querySelector('.chat-info h3')?.textContent || null;
+                if (firstChatId) {
+                    const firstChatData = Array.from(chats.values()).find(item => item.element === firstChat);
+                    if (firstChatData) {
+                        openChat(firstChatData.id || firstChatData.name, firstChatData.type || 'group');
+                    }
+                }
             }
         }
 
-        function addChatToSidebar(chatName) {
+        function saveChatsToStorage(chatItems) {
+            try {
+                localStorage.setItem(`chats_${currentUserId}`, JSON.stringify(chatItems));
+            } catch (e) {
+                console.warn('Не удалось сохранить чаты в localStorage:', e);
+            }
+        }
+
+        function loadChatsFromStorage() {
+            try {
+                const stored = localStorage.getItem(`chats_${currentUserId}`);
+                return stored ? JSON.parse(stored) : null;
+            } catch (e) {
+                console.warn('Не удалось загрузить чаты из localStorage:', e);
+                return null;
+            }
+        }
+
+        function saveDirectChatToStorage(chatId, displayName, otherUserId, avatar) {
+            try {
+                const key = `direct_chats_${currentUserId}`;
+                const saved = loadDirectChatsFromStorage() || [];
+                // Удалить существующий чат с этим ID если есть
+                const directChats = saved.filter(item => item.chatId !== chatId);
+                // Добавить новый или обновленный чат
+                directChats.push({ chatId, displayName, otherUserId, avatar, timestamp: Date.now() });
+                localStorage.setItem(key, JSON.stringify(directChats));
+            } catch (e) {
+                console.warn('Не удалось сохранить прямой чат в localStorage:', e);
+            }
+        }
+
+        function loadDirectChatsFromStorage() {
+            try {
+                const key = `direct_chats_${currentUserId}`;
+                const stored = localStorage.getItem(key);
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.warn('Не удалось загрузить прямые чаты из localStorage:', e);
+                return [];
+            }
+        }
+
+        function addChatToSidebar(chatId, chatName, save = true) {
             const chatsList = document.getElementById('chatsList');
             
-            if (!chats.has(chatName)) {
+            if (!chats.has(chatId)) {
                 const chatDiv = document.createElement('div');
                 chatDiv.className = 'chat-item';
                 
@@ -3625,14 +3888,24 @@ const firebaseConfig = {<br/>
                     </div>
                 `;
                 
-                chatDiv.addEventListener('click', () => openChat(chatName));
+                chatDiv.addEventListener('click', () => openChat(chatId, 'group'));
                 chatsList.appendChild(chatDiv);
                 
-                chats.set(chatName, {
+                chats.set(chatId, {
+                    id: chatId,
                     element: chatDiv,
                     name: chatName,
+                    type: 'group',
                     lastMessage: null
                 });
+
+                if (save && currentUserId) {
+                    const savedChats = loadChatsFromStorage() || [];
+                    if (!savedChats.some(item => item.id === chatId && item.type === 'group')) {
+                        savedChats.push({ id: chatId, type: 'group', name: chatName });
+                        saveChatsToStorage(savedChats);
+                    }
+                }
             }
         }
 
@@ -3682,17 +3955,24 @@ const firebaseConfig = {<br/>
             // Обновить аватар
             const chatAvatarEl = document.getElementById('headerAvatar');
             if (chatData && chatData.avatar) {
-                chatAvatarEl.style.background = `linear-gradient(135deg, ${chatData.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
+                if (chatData.avatar.startsWith('http') || chatData.avatar.startsWith('data:')) {
+                    // It's an image URL
+                    chatAvatarEl.style.background = `url(${chatData.avatar}) center/cover`;
+                } else {
+                    // It's a color
+                    chatAvatarEl.style.background = `linear-gradient(135deg, ${chatData.avatar} 0%, rgba(255,255,255,0.1) 100%)`;
+                }
             } else {
                 chatAvatarEl.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             }
             chatAvatarEl.innerHTML = `<i class="fas fa-comments"></i>`;
             const avatarText = chatData ? chatData.name.charAt(0) : chatName.charAt(0);
-            if (!chatData?.avatar) {
+            if (!chatData?.avatar || (chatData.avatar && !chatData.avatar.startsWith('http') && !chatData.avatar.startsWith('data:'))) {
                 chatAvatarEl.textContent = avatarText.toUpperCase();
             }
 
             // Очистить сообщения
+            detachCurrentChatListener();
             const messagesArea = document.getElementById('messagesArea');
             messagesArea.innerHTML = '';
             loadedMessages.clear();
@@ -3731,8 +4011,11 @@ const firebaseConfig = {<br/>
             const dbPath = currentChatType === 'direct' ? `direct_messages/${chatName}` : `messages/${chatName}`;
             const messagesRef = ref(database, dbPath);
             
+            detachCurrentChatListener();
+            currentMessagesRef = messagesRef;
+
             try {
-                onChildAdded(messagesRef, (snapshot) => {
+                currentMessagesListener = onChildAdded(messagesRef, (snapshot) => {
                     const messageId = snapshot.key;
                     
                     // Избежать дубликатов
@@ -3745,6 +4028,14 @@ const firebaseConfig = {<br/>
             } catch (error) {
                 console.log('Ошибка при загрузке сообщений:', error.message);
             }
+        }
+
+        function detachCurrentChatListener() {
+            if (currentMessagesRef && currentMessagesListener) {
+                off(currentMessagesRef, 'child_added', currentMessagesListener);
+            }
+            currentMessagesRef = null;
+            currentMessagesListener = null;
         }
 
         // ============== ОБРАБОТКА ЗАГРУЗКИ ИЗОБРАЖЕНИЙ ==============
@@ -3808,6 +4099,47 @@ const firebaseConfig = {<br/>
             });
         }
 
+        // ============== ПРОСМОТР ФОТОГРАФИЙ ==============
+        let currentModalImages = [];
+        let currentImageIndex = 0;
+
+        function openImageModal(imgElement) {
+            const messageImages = Array.from(document.querySelectorAll('.message-image'));
+            currentModalImages = messageImages.map(img => img.src);
+            currentImageIndex = messageImages.indexOf(imgElement);
+            if (currentImageIndex < 0) currentImageIndex = 0;
+
+            if (currentModalImages.length === 0) return;
+
+            displayModalImage();
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function displayModalImage() {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImage');
+            const counter = document.getElementById('imageCounter');
+            const prevBtn = document.getElementById('imagePrev');
+            const nextBtn = document.getElementById('imageNext');
+
+            img.src = currentModalImages[currentImageIndex];
+            
+            if (currentModalImages.length > 1) {
+                counter.style.display = 'block';
+                counter.textContent = `${currentImageIndex + 1} / ${currentModalImages.length}`;
+                prevBtn.style.display = currentImageIndex > 0 ? 'flex' : 'none';
+                nextBtn.style.display = currentImageIndex < currentModalImages.length - 1 ? 'flex' : 'none';
+            } else {
+                counter.style.display = 'none';
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            }
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
         // ============== ОТПРАВКА СООБЩЕНИЯ ==============
         function sendMessage() {
             if (!firebaseReady) {
@@ -3862,7 +4194,29 @@ const firebaseConfig = {<br/>
 
             const messageDiv = document.createElement('div');
             const isOwnMessage = userId === currentUserId;
-            const isRead = isOwnMessage ? true : (readBy && readBy[currentUserId] ? true : false);
+            
+            // Проверка статуса прочтения для групп и ДМ
+            let isRead = false;
+            if (isOwnMessage) {
+                isRead = true;
+            } else if (currentChatType === 'direct') {
+                // В ДМ просто проверяем, открыл ли текущий пользователь
+                isRead = readBy && readBy[currentUserId] ? true : false;
+            } else {
+                // В групповом чате: считается прочитано, если менее 3 человек НЕ посмотрели
+                // (т.е. если 3 или больше человек не посмотрели - то не прочитано)
+                if (readBy) {
+                    const readCount = Object.keys(readBy).length - 1; // Минус сам автор
+                    // Нужно знать, сколько всего людей в группе - используем примерную оценку
+                    // Считаем, что если посмотрели >= 3 человека (кроме автора) - то прочитано
+                    // Если посмотрели < 3 человек (не считая автора) - то не прочитано
+                    isRead = readCount >= 3;
+                } else {
+                    // Если никто не посмотрел - не прочитано
+                    isRead = false;
+                }
+            }
+            
             messageDiv.className = `message ${isOwnMessage ? 'own' : 'other'}`;
 
             const formattedTime = formatTime(timestamp);
@@ -3882,14 +4236,8 @@ const firebaseConfig = {<br/>
             let imagesHtml = '';
             if (images && Array.isArray(images)) {
                 imagesHtml = '<div class="message-images-container">';
-                images.forEach(imageData => {
-                    // Если это URL
-                    if (imageData.startsWith('http')) {
-                        imagesHtml += `<img src="${escapeHtml(imageData)}" alt="Image" class="message-image" style="max-width: 100%; border-radius: 12px; cursor: pointer;" onclick="window.open('${escapeHtml(imageData)}', '_blank')">`;
-                    } else {
-                        // Если это base64
-                        imagesHtml += `<img src="${escapeHtml(imageData)}" alt="Image" class="message-image" style="max-width: 100%; border-radius: 12px; cursor: pointer;">`;
-                    }
+                images.forEach((imageData) => {
+                    imagesHtml += `<img src="${escapeHtml(imageData)}" alt="Image" class="message-image" onclick="openImageModal(this)">`;
                 });
                 imagesHtml += '</div>';
             }
@@ -3949,6 +4297,37 @@ const firebaseConfig = {<br/>
                 return v.toString(16);
             });
         }
+
+        // ============== ЭКСПОРТ ФУНКЦИЙ В ГЛОБАЛЬНЫЙ СКОП ==============
+        window.sendMessage = sendMessage;
+        window.displayMessage = displayMessage;
+        window.openChat = openChat;
+        window.openImageModal = openImageModal;
+        window.closeImageModal = closeImageModal;
+        window.displayModalImage = displayModalImage;
+        window.loadMessagesFromChat = loadMessagesFromChat;
+        window.detachCurrentChatListener = detachCurrentChatListener;
+        window.handleImageSelection = handleImageSelection;
+        window.removeImage = removeImage;
+        window.updateImagePreviews = updateImagePreviews;
+        window.formatTime = formatTime;
+        window.escapeHtml = escapeHtml;
+        window.formatChatPreview = formatChatPreview;
+        window.updateChatPreview = updateChatPreview;
+        window.loadDefaultChat = loadDefaultChat;
+        window.loadChatsFromStorage = loadChatsFromStorage;
+        window.saveChatsToStorage = saveChatsToStorage;
+        window.loadDirectChatsFromStorage = loadDirectChatsFromStorage;
+        window.saveDirectChatToStorage = saveDirectChatToStorage;
+        window.addDirectChatToSidebar = addDirectChatToSidebar;
+        window.addChatToSidebar = addChatToSidebar;
+        window.setupEventListeners = setupEventListeners;
+        window.initiateCall = initiateCall;
+        window.setupAuthHandlers = setupAuthHandlers;
+        window.hideLoadingScreen = hideLoadingScreen;
+        window.init = init;
+        window.showNotification = showNotification;
+        window.generateUUID = generateUUID;
 
         // Запуск приложения
         setupAuthHandlers();
