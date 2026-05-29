@@ -3174,9 +3174,8 @@ const firebaseConfig = {<br/>
             // Определить, локальное ли приложение
             isLocalHost = window.location.protocol === 'file:';
 
-            // setupAuthHandlers() уже вызван в onAuthStateChanged
+            // Ждём авторизации (onAuthStateChanged вызовет init() повторно)
             if (!currentUser) {
-                setupAuthHandlers();
                 return;
             }
 
@@ -4121,6 +4120,16 @@ const firebaseConfig = {<br/>
             if (!firebaseReady) {
                 showNotification('Ошибка подключения', 'Firebase не подключен. Пожалуйста, настройте конфиг и обновите страницу.', 'error');
                 return;
+            }
+
+            // Синхронизировать currentChat/currentChatType с активным элементом сайдбара
+            const activeItem = document.querySelector('.chat-item.active');
+            if (activeItem) {
+                const activeChatData = Array.from(chats.values()).find(item => item.element === activeItem);
+                if (activeChatData) {
+                    currentChat = activeChatData.id || activeChatData.name;
+                    currentChatType = activeChatData.type || 'group';
+                }
             }
 
             const messageInput = document.getElementById('messageInput');
