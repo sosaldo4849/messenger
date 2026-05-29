@@ -884,18 +884,79 @@
             margin-bottom: 4px;
         }
 
+        /* ИЗОБРАЖЕНИЯ В СООБЩЕНИЯХ */
+        .message-image {
+            max-width: 100%;
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .message-image:hover {
+            transform: scale(1.02);
+        }
+
+        .message-images-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .image-preview {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .image-preview-img {
+            max-width: 300px;
+            max-height: 400px;
+            border-radius: 12px;
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .image-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .image-remove:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
         /* ПАНЕЛЬ ВВОДА */
         .input-area {
             background: #1a1f28;
             border-top: 1px solid #2a2f38;
             padding: 16px;
             display: flex;
+            flex-wrap: wrap;
             gap: 12px;
             align-items: flex-end;
         }
 
         .input-wrapper {
             flex: 1;
+            min-width: 200px;
             display: flex;
             align-items: center;
             background: #2a2f38;
@@ -923,6 +984,82 @@
 
         .input-wrapper textarea::placeholder {
             color: #8a8f98;
+        }
+
+        #imagePreviewArea {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .image-preview {
+            position: relative;
+            display: inline-block;
+            max-width: 80px;
+            margin-bottom: 8px;
+        }
+
+        .image-preview-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #31a24c;
+        }
+
+        .image-remove {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        .image-remove:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+
+        .file-input-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #667eea;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-input-btn:hover {
+            background: #5568d3;
+            transform: scale(1.05);
+        }
+
+        .file-input-btn:active {
+            transform: scale(0.95);
+        }
+
+        #imageInput {
+            display: none;
         }
 
         .send-btn {
@@ -1950,6 +2087,11 @@
                 <div class="input-wrapper">
                     <textarea id="messageInput" placeholder="Напишите сообщение..." rows="1"></textarea>
                 </div>
+                <div id="imagePreviewArea"></div>
+                <input type="file" id="imageInput" accept="image/*" multiple />
+                <button class="file-input-btn" id="photoBtn" title="Прикрепить фото">
+                    <i class="fas fa-image"></i>
+                </button>
                 <button class="send-btn" id="sendBtn" title="Отправить">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -2215,6 +2357,7 @@
         let isLocalHost = false;
         let confirmationResult = null;
         let recaptchaVerifier = null;
+        let selectedImages = []; // Массив для хранения выбранных изображений
         let userProfile = {
             name: 'Пользователь',
             avatar: '#667eea',
@@ -2978,6 +3121,14 @@ const firebaseConfig = {<br/>
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
             });
 
+            // Обработчик для кнопки загрузки фото
+            document.getElementById('photoBtn').addEventListener('click', () => {
+                document.getElementById('imageInput').click();
+            });
+
+            // Обработчик для выбора фото
+            document.getElementById('imageInput').addEventListener('change', handleImageSelection);
+
             // Мобильный toggle сайдбара
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.querySelector('.sidebar');
@@ -3589,11 +3740,72 @@ const firebaseConfig = {<br/>
                     loadedMessages.add(messageId);
 
                     const data = snapshot.val();
-                    displayMessage(data.name, data.text, data.timestamp, data.userId, messageId, data.readBy, dbPath);
+                    displayMessage(data.name, data.text, data.timestamp, data.userId, messageId, data.readBy, dbPath, data.images);
                 });
             } catch (error) {
                 console.log('Ошибка при загрузке сообщений:', error.message);
             }
+        }
+
+        // ============== ОБРАБОТКА ЗАГРУЗКИ ИЗОБРАЖЕНИЙ ==============
+        function handleImageSelection(e) {
+            const files = e.target.files;
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const previewArea = document.getElementById('imagePreviewArea');
+            
+            for (let file of files) {
+                if (!file.type.startsWith('image/')) {
+                    showNotification('Ошибка', 'Выберите изображение', 'error');
+                    continue;
+                }
+                
+                if (file.size > maxSize) {
+                    showNotification('Ошибка', 'Размер изображения не должен превышать 5MB', 'error');
+                    continue;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Data = event.target.result;
+                    selectedImages.push(base64Data);
+                    
+                    // Показать превью
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    previewDiv.innerHTML = `
+                        <img src="${base64Data}" class="image-preview-img" alt="Preview">
+                        <button type="button" class="image-remove" onclick="removeImage(${selectedImages.length - 1})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    previewArea.appendChild(previewDiv);
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            e.target.value = '';
+        }
+
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updateImagePreviews();
+        }
+
+        function updateImagePreviews() {
+            const previewArea = document.getElementById('imagePreviewArea');
+            previewArea.innerHTML = '';
+            
+            selectedImages.forEach((imageData, index) => {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview';
+                previewDiv.innerHTML = `
+                    <img src="${imageData}" class="image-preview-img" alt="Preview">
+                    <button type="button" class="image-remove" onclick="removeImage(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                previewArea.appendChild(previewDiv);
+            });
         }
 
         // ============== ОТПРАВКА СООБЩЕНИЯ ==============
@@ -3605,8 +3817,10 @@ const firebaseConfig = {<br/>
 
             const messageInput = document.getElementById('messageInput');
             const text = messageInput.value.trim();
+            const hasText = text.length > 0;
+            const hasImages = selectedImages.length > 0;
 
-            if (!text || !currentChat) {
+            if ((!hasText && !hasImages) || !currentChat) {
                 return;
             }
 
@@ -3620,7 +3834,8 @@ const firebaseConfig = {<br/>
                 timestamp: serverTimestamp(),
                 readBy: {
                     [currentUserId]: true
-                }
+                },
+                images: hasImages ? selectedImages : null
             };
 
             push(messagesRef, messageData).catch(error => {
@@ -3630,11 +3845,14 @@ const firebaseConfig = {<br/>
 
             messageInput.value = '';
             messageInput.style.height = 'auto';
+            selectedImages = [];
+            document.getElementById('imagePreviewArea').innerHTML = '';
+            document.getElementById('imageInput').value = '';
             document.getElementById('sendBtn').disabled = false;
         }
 
         // ============== ОТОБРАЖЕНИЕ СООБЩЕНИЙ ==============
-        function displayMessage(name, text, timestamp, userId, messageId, readBy, dbPath) {
+        function displayMessage(name, text, timestamp, userId, messageId, readBy, dbPath, images = null) {
             const messagesArea = document.getElementById('messagesArea');
             
             // Очистить empty state если есть
@@ -3644,7 +3862,7 @@ const firebaseConfig = {<br/>
 
             const messageDiv = document.createElement('div');
             const isOwnMessage = userId === currentUserId;
-            const isRead = isOwnMessage || (readBy && readBy[currentUserId]);
+            const isRead = isOwnMessage ? true : (readBy && readBy[currentUserId] ? true : false);
             messageDiv.className = `message ${isOwnMessage ? 'own' : 'other'}`;
 
             const formattedTime = formatTime(timestamp);
@@ -3660,10 +3878,27 @@ const firebaseConfig = {<br/>
                 });
             }
 
+            // Построение HTML изображений
+            let imagesHtml = '';
+            if (images && Array.isArray(images)) {
+                imagesHtml = '<div class="message-images-container">';
+                images.forEach(imageData => {
+                    // Если это URL
+                    if (imageData.startsWith('http')) {
+                        imagesHtml += `<img src="${escapeHtml(imageData)}" alt="Image" class="message-image" style="max-width: 100%; border-radius: 12px; cursor: pointer;" onclick="window.open('${escapeHtml(imageData)}', '_blank')">`;
+                    } else {
+                        // Если это base64
+                        imagesHtml += `<img src="${escapeHtml(imageData)}" alt="Image" class="message-image" style="max-width: 100%; border-radius: 12px; cursor: pointer;">`;
+                    }
+                });
+                imagesHtml += '</div>';
+            }
+
             messageDiv.innerHTML = `
                 <div class="message-bubble">
-                    ${!isOwnMessage ? `<div class="message-author">${name}</div>` : ''}
-                    <div class="message-text">${escapeHtml(text)}</div>
+                    ${!isOwnMessage ? `<div class="message-author">${escapeHtml(name)}</div>` : ''}
+                    ${imagesHtml}
+                    ${text ? `<div class="message-text">${escapeHtml(text)}</div>` : ''}
                     <div class="message-meta">
                         <span class="message-time">${formattedTime}</span>
                         <span class="message-read-status ${isRead ? 'read' : 'unread'}" title="${isRead ? 'Прочитано' : 'Не прочитано'}">${isRead ? '✔' : '•'}</span>
