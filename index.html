@@ -2866,8 +2866,9 @@
             document.getElementById('incomingCallOverlay').classList.remove('active');
             document.getElementById('outgoingCallOverlay').classList.remove('active');
             currentCallId = null;
+            const finalDuration = callDuration;
+            showNotification('Звонок завершен', `Длительность: ${Math.floor(finalDuration / 60)}:${String(finalDuration % 60).padStart(2, '0')}`, 'info');
             callDuration = 0;
-            showNotification('Звонок завершен', `Длительность: ${Math.floor(callDuration / 60)}:${String(callDuration % 60).padStart(2, '0')}`, 'info');
         }
 
         async function acceptCall() {
@@ -3901,7 +3902,7 @@ const firebaseConfig = {<br/>
         // ============== ОТКРЫТИЕ ЧАТА ==============
         function openChat(chatName, chatType = 'group') {
             currentChat = chatName;
-            currentChatType = chatType;
+            currentChatType = chatType || 'group';
             
             // Обновить активный чат в сайдбаре
             document.querySelectorAll('.chat-item').forEach(item => {
@@ -3967,7 +3968,7 @@ const firebaseConfig = {<br/>
             loadedMessages.clear();
 
             // Загрузить сообщения из Firebase
-            loadMessagesFromChat(chatName);
+            loadMessagesFromChat(chatName, chatType);
 
             // Сфокусировать на input
             document.getElementById('messageInput').focus();
@@ -3994,10 +3995,12 @@ const firebaseConfig = {<br/>
         }
 
         // ============== ЗАГРУЗКА СООБЩЕНИЙ ==============
-        function loadMessagesFromChat(chatName) {
+        function loadMessagesFromChat(chatName, chatType = 'group') {
+            if (!chatType) chatType = 'group';
+            currentChatType = chatType;
             if (!firebaseReady) return;
 
-            const dbPath = currentChatType === 'direct' ? `direct_messages/${chatName}` : `messages/${chatName}`;
+            const dbPath = chatType === 'direct' ? `direct_messages/${chatName}` : `messages/${chatName}`;
             const messagesRef = ref(database, dbPath);
             
             detachCurrentChatListener();
@@ -4012,7 +4015,7 @@ const firebaseConfig = {<br/>
                     loadedMessages.add(messageId);
 
                     const data = snapshot.val();
-                    displayMessage(data.name, data.text, data.timestamp, data.userId, messageId, data.readBy, dbPath, data.images);
+                    displayMessage(data.name, data.text, data.timestamp, data.userId, messageId, data.readBy, dbPath, data.images, chatType);
                 });
             } catch (error) {
                 console.log('Ошибка при загрузке сообщений:', error.message);
@@ -4145,6 +4148,10 @@ const firebaseConfig = {<br/>
                 return;
             }
 
+            if (!currentChatType) {
+                currentChatType = 'group';
+            }
+            
             const dbPath = currentChatType === 'direct' ? `direct_messages/${currentChat}` : `messages/${currentChat}`;
             const messagesRef = ref(database, dbPath);
 
@@ -4173,7 +4180,7 @@ const firebaseConfig = {<br/>
         }
 
         // ============== ОТОБРАЖЕНИЕ СООБЩЕНИЙ ==============
-        function displayMessage(name, text, timestamp, userId, messageId, readBy, dbPath, images = null) {
+        function displayMessage(name, text, timestamp, userId, messageId, readBy, dbPath, images = null, chatType = 'group') {
             const messagesArea = document.getElementById('messagesArea');
             
             // Очистить empty state если есть
@@ -4188,17 +4195,13 @@ const firebaseConfig = {<br/>
             let isRead = false;
             if (isOwnMessage) {
                 isRead = true;
-            } else if (currentChatType === 'direct') {
+            } else if (chatType === 'direct') {
                 // В ДМ просто проверяем, открыл ли текущий пользователь
                 isRead = readBy && readBy[currentUserId] ? true : false;
             } else {
-                // В групповом чате: считается прочитано, если менее 3 человек НЕ посмотрели
-                // (т.е. если 3 или больше человек не посмотрели - то не прочитано)
+                // В групповом чате: считается прочитано, если 3+ человека открыли (не считая автора)
                 if (readBy) {
                     const readCount = Object.keys(readBy).length - 1; // Минус сам автор
-                    // Нужно знать, сколько всего людей в группе - используем примерную оценку
-                    // Считаем, что если посмотрели >= 3 человека (кроме автора) - то прочитано
-                    // Если посмотрели < 3 человек (не считая автора) - то не прочитано
                     isRead = readCount >= 3;
                 } else {
                     // Если никто не посмотрел - не прочитано
@@ -4231,6 +4234,19 @@ const firebaseConfig = {<br/>
                 imagesHtml += '</div>';
             }
 
+            // Для собственных сообщений показываем количество прочитавших
+            let readStatus = '';
+            if (isOwnMessage) {
+                if (readBy) {
+                    const readCount = Object.keys(readBy).length - 1; // Минус автор
+                    readStatus = `<span class="message-read-status ${isRead ? 'read' : 'unread'}" title="Прочитали: ${readCount}">${readCount > 0 ? '✔✔' : '✔'}</span>`;
+                } else {
+                    readStatus = `<span class="message-read-status unread" title="Не прочитано">✔</span>`;
+                }
+            } else {
+                readStatus = `<span class="message-read-status ${isRead ? 'read' : 'unread'}" title="${isRead ? 'Прочитано' : 'Не прочитано'}">${isRead ? '✔' : '•'}</span>`;
+            }
+            
             messageDiv.innerHTML = `
                 <div class="message-bubble">
                     ${!isOwnMessage ? `<div class="message-author">${escapeHtml(name)}</div>` : ''}
@@ -4238,7 +4254,7 @@ const firebaseConfig = {<br/>
                     ${text ? `<div class="message-text">${escapeHtml(text)}</div>` : ''}
                     <div class="message-meta">
                         <span class="message-time">${formattedTime}</span>
-                        <span class="message-read-status ${isRead ? 'read' : 'unread'}" title="${isRead ? 'Прочитано' : 'Не прочитано'}">${isRead ? '✔' : '•'}</span>
+                        ${readStatus}
                     </div>
                 </div>
             `;
