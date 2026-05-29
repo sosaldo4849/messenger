@@ -3852,17 +3852,6 @@ const firebaseConfig = {<br/>
             }
         }
 
-        function loadDirectChatsFromStorage() {
-            try {
-                const key = `direct_chats_${currentUserId}`;
-                const stored = localStorage.getItem(key);
-                return stored ? JSON.parse(stored) : [];
-            } catch (e) {
-                console.warn('Не удалось загрузить прямые чаты из localStorage:', e);
-                return [];
-            }
-        }
-
         function addChatToSidebar(chatId, chatName, save = true) {
             const chatsList = document.getElementById('chatsList');
             
